@@ -5,7 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reel_saver/features/history/history_service.dart';
 import 'package:reel_saver/features/history/models/history_item.dart';
+import 'package:reel_saver/features/home/providers/auto_mode_provider.dart';
+import 'package:reel_saver/features/settings/providers/locale_provider.dart';
 import 'package:reel_saver/features/settings/settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late Directory tempTestDirectory;
@@ -15,6 +18,7 @@ void main() {
   late HistoryService testHistoryService;
 
   setUp(() {
+    SharedPreferences.setMockInitialValues({});
     tempTestDirectory =
         Directory.systemTemp.createTempSync('settings_screen_test_');
     mockCacheDirectory =
@@ -34,10 +38,11 @@ void main() {
     }
   });
 
-  Widget createTestWidget() {
+  Widget createTestWidget({List<Override> overrides = const []}) {
     return ProviderScope(
       overrides: [
         historyServiceProvider.overrideWithValue(testHistoryService),
+        ...overrides,
       ],
       child: MaterialApp(
         home: SettingsScreen(
@@ -49,7 +54,69 @@ void main() {
     );
   }
 
-  group('SettingsScreen Widget Tests', () {
+  group('SettingsScreen Widget Tests - Preferences', () {
+    testWidgets(
+        'renders Preferences section with Automatic URL Detection and App Language',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Preferences'), findsOneWidget);
+      expect(find.text('Automatic URL Detection'), findsOneWidget);
+      expect(find.byType(Switch), findsOneWidget);
+      expect(find.text('App Language'), findsOneWidget);
+      expect(find.text('English'), findsWidgets);
+      expect(find.byType(DropdownButton<Locale>), findsOneWidget);
+    });
+
+    testWidgets('toggling Automatic URL Detection switch updates autoModeProvider',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final switchFinder = find.byType(Switch);
+      expect(switchFinder, findsOneWidget);
+      expect(tester.widget<Switch>(switchFinder).value, isTrue);
+
+      // Tap toggle to disable
+      await tester.tap(switchFinder);
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<Switch>(switchFinder).value, isFalse);
+
+      final preferences = await SharedPreferences.getInstance();
+      expect(preferences.getBool(AutoModeNotifier.preferencesKey), isFalse);
+    });
+
+    testWidgets('selecting a new language from dropdown updates localeProvider',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Open language dropdown
+      await tester.tap(find.byType(DropdownButton<Locale>));
+      await tester.pumpAndSettle();
+
+      // Verify all 5 language options appear in dropdown menu
+      expect(find.text('English').hitTestable(), findsOneWidget);
+      expect(find.text('Hindi').hitTestable(), findsOneWidget);
+      expect(find.text('Tamil').hitTestable(), findsOneWidget);
+      expect(find.text('Spanish').hitTestable(), findsOneWidget);
+      expect(find.text('French').hitTestable(), findsOneWidget);
+
+      // Select Spanish
+      await tester.tap(find.text('Spanish').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify selected language changed to Spanish
+      expect(find.text('Spanish'), findsWidgets);
+
+      final preferences = await SharedPreferences.getInstance();
+      expect(preferences.getString(LocaleNotifier.preferencesKey), 'es');
+    });
+  });
+
+  group('SettingsScreen Widget Tests - Storage Management', () {
     testWidgets('renders Clear Cache and Clear Storage options',
         (tester) async {
       await tester.pumpWidget(createTestWidget());

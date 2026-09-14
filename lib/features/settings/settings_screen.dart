@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../download_engine/download_execution_service.dart';
 import '../history/history_service.dart';
+import '../home/providers/auto_mode_provider.dart';
+import 'providers/locale_provider.dart';
 
 /// Settings screen offering application cache cleanup and complete storage wiping options.
 class SettingsScreen extends ConsumerWidget {
@@ -160,6 +162,9 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAutomaticDetectionEnabled = ref.watch(autoModeProvider);
+    final activeLocale = ref.watch(localeProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -167,6 +172,73 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
+          Text(
+            'Preferences',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(Icons.flash_on_rounded),
+                  title: const Text(
+                    'Automatic URL Detection',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: const Text(
+                    'Inspect clipboard on app resume to detect video links automatically.',
+                  ),
+                  value: isAutomaticDetectionEnabled,
+                  onChanged: (newValue) {
+                    ref.read(autoModeProvider.notifier).setAutoMode(newValue);
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.language_rounded),
+                  title: const Text(
+                    'App Language',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    AppLanguage.fromLocale(activeLocale).displayName,
+                  ),
+                  trailing: DropdownButtonHideUnderline(
+                    child: DropdownButton<Locale>(
+                      value: activeLocale,
+                      icon: const Icon(Icons.arrow_drop_down_rounded),
+                      onChanged: (Locale? newLocale) {
+                        if (newLocale != null) {
+                          ref
+                              .read(localeProvider.notifier)
+                              .setLocale(newLocale);
+                        }
+                      },
+                      items: AppLanguage.values.map((language) {
+                        return DropdownMenuItem<Locale>(
+                          value: language.locale,
+                          child: Text(language.displayName),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
           Text(
             'Storage Management',
             style: TextStyle(
