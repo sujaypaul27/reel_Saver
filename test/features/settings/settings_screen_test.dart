@@ -124,6 +124,10 @@ void main() {
   group('SettingsScreen Widget Tests - Storage Management', () {
     testWidgets('renders Clear Cache and Clear Storage options',
         (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
@@ -135,6 +139,10 @@ void main() {
     testWidgets(
         'Clear Cache dialog has exact text, highlights No by default, and cancels on No',
         (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       final dummyCacheFile = File('${mockCacheDirectory.path}/thumb_preview.jpg');
       dummyCacheFile.writeAsStringSync('cached thumbnail data');
 
@@ -170,6 +178,10 @@ void main() {
     testWidgets(
         'Clear Cache confirms on Yes and deletes temporary cache files',
         (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       final dummyCacheFile = File('${mockCacheDirectory.path}/thumb_preview.jpg');
       dummyCacheFile.writeAsStringSync('cached thumbnail data');
 
@@ -195,6 +207,10 @@ void main() {
     testWidgets(
         'Clear Storage dialog has exact text, highlights No by default, and cancels on No',
         (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       final downloadedVideo =
           File('${mockDownloadsDirectory.path}/my_reel.mp4');
       downloadedVideo.writeAsStringSync('video data');
@@ -246,6 +262,10 @@ void main() {
     testWidgets(
         'Clear Storage confirms on Yes, deletes downloaded files and wipes history store',
         (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
       final downloadedVideo =
           File('${mockDownloadsDirectory.path}/my_reel.mp4');
       downloadedVideo.writeAsStringSync('video data');

@@ -8,17 +8,24 @@ import 'package:reel_saver/features/home/screens/fetching_details_screen.dart';
 
 import 'package:reel_saver/l10n/app_localizations.dart';
 
+import 'package:reel_saver/features/auth/instagram_session_service.dart';
+
 class MockExtractionService extends ExtractionService {
   final VideoInfo? response;
   final bool shouldThrow;
+  final Object? errorToThrow;
 
   const MockExtractionService({
     this.response,
     this.shouldThrow = false,
+    this.errorToThrow,
   });
 
   @override
   Future<VideoInfo> fetchDetails(String url) async {
+    if (errorToThrow != null) {
+      throw errorToThrow!;
+    }
     if (shouldThrow) {
       throw Exception('Extraction failed');
     }
@@ -132,6 +139,46 @@ void main() {
       );
       expect(find.text('Retry'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
+    });
+
+    testWidgets('shows Instagram Login Required error state and login button when auth required', (tester) async {
+      const authRequiredService = MockExtractionService(
+        errorToThrow: InstagramAuthRequiredException(),
+      );
+      await tester.pumpWidget(createTestApp(extractionService: authRequiredService));
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Instagram Login Required'), findsOneWidget);
+      expect(
+        find.text('This Instagram Reel requires login to download. Please log in with Instagram.'),
+        findsOneWidget,
+      );
+      expect(find.text('Log in with Instagram'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.byIcon(Icons.lock_clock_rounded), findsOneWidget);
+    });
+
+    testWidgets('shows Instagram Session Expired error state and login button when session expired', (tester) async {
+      const sessionExpiredService = MockExtractionService(
+        errorToThrow: InstagramSessionExpiredException(),
+      );
+      await tester.pumpWidget(createTestApp(extractionService: sessionExpiredService));
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Instagram Session Expired'), findsOneWidget);
+      expect(
+        find.text('Your Instagram session has expired. Please log in again to access this Reel.'),
+        findsOneWidget,
+      );
+      expect(find.text('Log in with Instagram'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.byIcon(Icons.lock_clock_rounded), findsOneWidget);
     });
   });
 }

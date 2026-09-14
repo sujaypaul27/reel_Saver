@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 
+import '../auth/instagram_session_service.dart';
 import 'models/video_format.dart';
 import 'models/video_info.dart';
 
@@ -15,11 +16,13 @@ class ExtractionService {
   final String? ytDlpBinaryPath;
   final YoutubeExplode? youtubeExplodeClient;
   final http.Client? httpClient;
+  final InstagramSessionService? sessionService;
 
   const ExtractionService({
     this.ytDlpBinaryPath,
     this.youtubeExplodeClient,
     this.httpClient,
+    this.sessionService,
   });
 
   /// Fetches real video details and format options for the provided [url].
@@ -149,59 +152,81 @@ class ExtractionService {
     }
   }
 
-  /// Extracts Instagram reel details using web endpoints or bundled yt-dlp.
+  /// Extracts Instagram reel details using pure-Dart HTTP endpoints with optional
+  /// authenticated session cookies.
   Future<VideoInfo> _fetchInstagramDetails(String url) async {
-    // 1. First attempt yt-dlp binary if available
-    try {
-      return await _fetchViaYtDlp(url);
-    } catch (ytDlpError) {
-      debugPrint('[ExtractionService] yt-dlp failed for Instagram: $ytDlpError. Trying web endpoint...');
-    }
-
-    // 2. Direct Instagram JSON endpoints
     final shortcodeMatch =
         RegExp(r'(?:reel|reels|p)/([A-Za-z0-9_-]+)').firstMatch(url);
     final shortcode = shortcodeMatch?.group(1);
 
-    if (shortcode != null) {
-      final client = httpClient ?? http.Client();
-      try {
-        final candidates = [
-          'https://www.instagram.com/reel/$shortcode/?__a=1&__d=dis',
-          'https://www.instagram.com/p/$shortcode/?__a=1&__d=dis',
-        ];
+    if (shortcode == null) {
+      throw Exception('Could not parse Instagram reel shortcode from URL.');
+    }
 
-        for (final candidateUrl in candidates) {
-          try {
-            final response = await client.get(
-              Uri.parse(candidateUrl),
-              headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
-                'Accept': '*/*',
-                'X-IG-App-ID': '936619743392459',
-              },
-            );
+    final cookieHeader = await sessionService?.getCookieHeader();
+    final hasSession = cookieHeader != null && cookieHeader.isNotEmpty;
 
-            if (response.statusCode == 200 &&
-                response.body.isNotEmpty &&
-                !response.body.startsWith('<!DOCTYPE html>')) {
-              final dynamic data = jsonDecode(response.body);
-              if (data is Map<String, dynamic>) {
-                final videoInfo = _parseInstagramJson(data);
-                if (videoInfo != null) {
-                  return videoInfo;
-                }
+    final client = httpClient ?? http.Client();
+    bool encounteredLoginWall = false;
+
+    try {
+      final candidates = [
+        'https://www.instagram.com/reel/$shortcode/?__a=1&__d=dis',
+        'https://www.instagram.com/p/$shortcode/?__a=1&__d=dis',
+      ];
+
+      final headers = <String, String>{
+        'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+        'Accept': '*/*',
+        'X-IG-App-ID': '936619743392459',
+        'Sec-Fetch-Site': 'same-origin',
+      };
+      if (hasSession) {
+        headers['Cookie'] = cookieHeader;
+      }
+
+      for (final candidateUrl in candidates) {
+        try {
+          final response = await client.get(
+            Uri.parse(candidateUrl),
+            headers: headers,
+          );
+
+          if (response.statusCode == 200 &&
+              response.body.isNotEmpty &&
+              !response.body.startsWith('<!DOCTYPE html>')) {
+            final dynamic data = jsonDecode(response.body);
+            if (data is Map<String, dynamic>) {
+              final videoInfo = _parseInstagramJson(data);
+              if (videoInfo != null) {
+                return videoInfo;
               }
             }
-          } catch (e) {
-            debugPrint('[ExtractionService] Instagram candidate failed: $e');
+          } else if (response.statusCode == 401 ||
+              response.body.contains('accounts/login') ||
+              response.body.startsWith('<!DOCTYPE html>')) {
+            encounteredLoginWall = true;
           }
+        } catch (e) {
+          debugPrint('[ExtractionService] Instagram candidate failed: $e');
         }
-      } finally {
-        if (httpClient == null) {
-          client.close();
-        }
+      }
+    } finally {
+      if (httpClient == null) {
+        client.close();
+      }
+    }
+
+    if (encounteredLoginWall) {
+      if (hasSession) {
+        throw const InstagramSessionExpiredException(
+          'Instagram session expired. Please log in again.',
+        );
+      } else {
+        throw const InstagramAuthRequiredException(
+          'Instagram login required for this Reel. Please log in via Settings.',
+        );
       }
     }
 
@@ -452,8 +477,13 @@ class ExtractionService {
     return [...videoFormats, ...audioFormats];
   }
 
-  /// Locates any bundled yt-dlp binary on the system.
+  /// Locates any bundled yt-dlp binary on the system (desktop only).
   Future<String?> _locateBundledYtDlp() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      // Mobile platforms enforce SELinux W^X restrictions and lack a Python runtime.
+      // Native Dart extractors are used exclusively on mobile.
+      return null;
+    }
     const possiblePaths = [
       'assets/bin/yt-dlp.exe',
       'assets/bin/yt-dlp',
@@ -469,5 +499,6 @@ class ExtractionService {
 
 /// Provider for [ExtractionService].
 final extractionServiceProvider = Provider<ExtractionService>((ref) {
-  return const ExtractionService();
+  final sessionService = ref.watch(instagramSessionServiceProvider);
+  return ExtractionService(sessionService: sessionService);
 });

@@ -11,6 +11,7 @@ import 'features/history/history_screen.dart';
 import 'features/home/screens/fetching_details_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/queue/screens/queue_screen.dart';
+import 'features/auth/screens/instagram_login_screen.dart';
 import 'features/settings/providers/locale_provider.dart';
 import 'features/settings/settings_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -94,6 +95,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const SettingsScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/instagram-login',
+      pageBuilder: (context, state) => buildFadeSlideTransitionPage(
+        context: context,
+        state: state,
+        child: const InstagramLoginScreen(),
       ),
     ),
   ],

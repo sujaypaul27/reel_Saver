@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/circular_percentage_indicator.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/instagram_session_service.dart';
 import '../../download_engine/extraction_service.dart';
 import '../../download_engine/models/queue_item.dart';
 import '../../download_engine/models/video_info.dart';
@@ -34,6 +36,7 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
   Animation<double>? _progressAnimation;
 
   VideoInfo? _videoInfo;
+  Object? _lastError;
 
   @override
   void initState() {
@@ -43,6 +46,7 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
 
   void _initAndStartExtraction() {
     _status = FetchStatus.loading;
+    _lastError = null;
 
     _animationController?.dispose();
     _animationController = AnimationController(
@@ -96,6 +100,7 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
       if (!mounted) return;
       setState(() {
         _status = FetchStatus.error;
+        _lastError = error;
       });
     }
   }
@@ -160,29 +165,81 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
 
   /// 2. Error view when video extraction fails
   Widget _buildErrorView(AppLocalizations l10n) {
+    final isSessionExpired = _lastError is InstagramSessionExpiredException;
+    final isAuthRequired = _lastError is InstagramAuthRequiredException;
+    final isInstagramAuthIssue = isSessionExpired || isAuthRequired;
+
+    final String errorTitle = isSessionExpired
+        ? 'Instagram Session Expired'
+        : isAuthRequired
+            ? 'Instagram Login Required'
+            : l10n.fetchErrorDescription;
+
+    final String errorSubtitle = isSessionExpired
+        ? 'Your Instagram session has expired. Please log in again to access this Reel.'
+        : isAuthRequired
+            ? 'This Instagram Reel requires login to download. Please log in with Instagram.'
+            : '';
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
+            Icon(
+              isInstagramAuthIssue ? Icons.lock_clock_rounded : Icons.error_outline,
               size: 64,
-              color: Colors.red,
+              color: isInstagramAuthIssue ? Colors.orange : Colors.red,
             ),
             const SizedBox(height: 16),
             Text(
-              l10n.fetchErrorDescription,
+              errorTitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
+            if (errorSubtitle.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                errorSubtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: Text(l10n.retryButton),
-              onPressed: _initAndStartExtraction,
-            ),
+            if (isInstagramAuthIssue) ...[
+              ElevatedButton.icon(
+                icon: const Icon(Icons.login_rounded),
+                label: const Text('Log in with Instagram'),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                onPressed: () async {
+                  final loggedIn =
+                      await context.push<bool>('/instagram-login');
+                  if (loggedIn == true && mounted) {
+                    _initAndStartExtraction();
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: Text(l10n.retryButton),
+                onPressed: _initAndStartExtraction,
+              ),
+            ] else ...[
+              ElevatedButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: Text(l10n.retryButton),
+                onPressed: _initAndStartExtraction,
+              ),
+            ],
           ],
         ),
       ),

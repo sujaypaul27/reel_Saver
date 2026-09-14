@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:media_scanner/media_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../auth/instagram_session_service.dart';
 import '../history/history_service.dart';
 import '../history/models/history_item.dart';
 import 'models/video_format.dart';
@@ -73,6 +74,7 @@ class DownloadExecutionService {
   final String? ytDlpBinaryPath;
   final Directory? customDownloadsDirectory;
   final http.Client? httpClient;
+  final InstagramSessionService? sessionService;
 
   const DownloadExecutionService({
     required this.historyService,
@@ -80,6 +82,7 @@ class DownloadExecutionService {
     this.ytDlpBinaryPath,
     this.customDownloadsDirectory,
     this.httpClient,
+    this.sessionService,
   });
 
   /// Resolves or creates the destination directory: ReelSaver/Downloads.
@@ -260,6 +263,11 @@ class DownloadExecutionService {
       request.headers['User-Agent'] =
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+      final cookieHeader = await sessionService?.getCookieHeader();
+      if (cookieHeader != null && cookieHeader.isNotEmpty) {
+        request.headers['Cookie'] = cookieHeader;
+      }
+
       final response = await client.send(request);
       if (response.statusCode >= 400) {
         throw Exception(
@@ -308,6 +316,9 @@ class DownloadExecutionService {
   }
 
   Future<String?> _locateBundledYtDlp() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      return null;
+    }
     const possiblePaths = [
       'assets/bin/yt-dlp.exe',
       'assets/bin/yt-dlp',
@@ -326,5 +337,6 @@ final downloadExecutionServiceProvider =
     Provider<DownloadExecutionService>((ref) {
   return DownloadExecutionService(
     historyService: ref.watch(historyServiceProvider),
+    sessionService: ref.watch(instagramSessionServiceProvider),
   );
 });

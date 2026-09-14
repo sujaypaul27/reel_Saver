@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../l10n/app_localizations.dart';
+import '../auth/instagram_session_provider.dart';
 import '../download_engine/download_execution_service.dart';
 import '../history/history_service.dart';
 import '../home/providers/auto_mode_provider.dart';
@@ -183,6 +185,47 @@ class SettingsScreen extends ConsumerWidget {
     return rawString.split('\n').first;
   }
 
+  Future<void> _handleInstagramLogout(
+      BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Logout from Instagram?'),
+          content: const Text(
+            'This will clear saved Instagram session tokens. You will need to log in again to download restricted or private reels.',
+          ),
+          actions: [
+            ElevatedButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(dialogContext).colorScheme.error,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await ref.read(instagramSessionProvider.notifier).logout();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Instagram session cleared.'),
+            duration: Duration(milliseconds: 1500),
+          ),
+        );
+      }
+    }
+  }
+
   String _getLocalizedThemeName(AppThemeMode mode, AppLocalizations l10n) {
     switch (mode) {
       case AppThemeMode.midnight:
@@ -199,6 +242,7 @@ class SettingsScreen extends ConsumerWidget {
     final isAutomaticDetectionEnabled = ref.watch(autoModeProvider);
     final activeLocale = ref.watch(localeProvider);
     final activeThemeMode = ref.watch(themeProvider);
+    final authState = ref.watch(instagramSessionProvider);
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -386,6 +430,91 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Instagram Authentication',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: authState.isAuthenticated
+                ? Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(
+                          Icons.verified_user_rounded,
+                          color: Colors.green,
+                        ),
+                        title: const Text(
+                          'Instagram Session Active',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          authState.userId != null
+                              ? 'Logged in (User ID: ${authState.userId})'
+                              : 'Ready for private and restricted content',
+                        ),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green, width: 0.8),
+                          ),
+                          child: const Text(
+                            'Logged In',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: Icon(
+                          Icons.logout_rounded,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        title: Text(
+                          'Logout / Clear Instagram Session',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                        ),
+                        subtitle: const Text(
+                          'Wipes saved Instagram cookies from secure storage',
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _handleInstagramLogout(context, ref),
+                      ),
+                    ],
+                  )
+                : ListTile(
+                    leading: const Icon(Icons.lock_open_rounded),
+                    title: const Text(
+                      'Instagram Login (for private/restricted content)',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: const Text(
+                      'Log in via Instagram to download restricted reels and avoid login walls',
+                    ),
+                    trailing: const Icon(Icons.open_in_new_rounded),
+                    onTap: () => context.push('/instagram-login'),
+                  ),
           ),
           const SizedBox(height: 24),
           Text(
