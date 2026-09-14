@@ -174,7 +174,7 @@ void main() {
       final failedItem = failingNotifier.state.first;
       expect(failedItem.id, equals(id));
       expect(failedItem.status, equals(QueueItemStatus.failed));
-      expect(failedItem.errorMessage, contains('Simulated download network error'));
+      expect(failedItem.errorMessage, contains('Network connection error'));
     });
 
     test('retryDownload re-triggers execution for a failed item', () async {

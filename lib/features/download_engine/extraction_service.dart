@@ -28,10 +28,27 @@ class ExtractionService {
           final dynamic parsedJson = jsonDecode(processResult.stdout.toString());
           if (parsedJson is Map<String, dynamic>) {
             return parseYtDlpJson(parsedJson);
+          } else {
+            throw const FormatException('Extractor returned unexpected data structure.');
           }
+        } else {
+          final stderrOutput = processResult.stderr.toString().trim();
+          debugPrint('[ExtractionService] yt-dlp failed: $stderrOutput');
+          throw Exception(
+            'Could not fetch video details. The video may be private, removed, or unavailable.',
+          );
         }
+      } on FormatException {
+        rethrow;
       } catch (processError) {
+        if (processError is Exception &&
+            processError.toString().contains('Could not fetch')) {
+          rethrow;
+        }
         debugPrint('[ExtractionService] Error executing yt-dlp: $processError');
+        throw Exception(
+          'Could not fetch video details. Please check your internet connection and try again.',
+        );
       }
     }
 

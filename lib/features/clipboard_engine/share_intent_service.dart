@@ -131,6 +131,10 @@ class ShareIntentService {
       debugPrint(
         '[ShareIntentService] Error extracting details for shared URL: $extractionError',
       );
+      const failureMessage =
+          'Could not fetch shared video. Please check your connection or link.';
+      onConfirmation?.call(failureMessage);
+      _showNativeToast(failureMessage);
     }
   }
 

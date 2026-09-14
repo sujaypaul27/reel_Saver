@@ -152,8 +152,16 @@ class DownloadExecutionService {
   }) async {
     final downloadsDir = await getDownloadsDirectory();
     final cleanTitle = sanitizeFileName(videoInfo.title);
-    final destinationPath =
+    String destinationPath =
         '${downloadsDir.path}/$cleanTitle.${format.fileExtension}';
+
+    // Prevent file collision and overwriting by generating a unique name if target already exists
+    int collisionIndex = 1;
+    while (await File(destinationPath).exists()) {
+      destinationPath =
+          '${downloadsDir.path}/$cleanTitle ($collisionIndex).${format.fileExtension}';
+      collisionIndex++;
+    }
 
     final binaryPath = ytDlpBinaryPath ?? await _locateBundledYtDlp();
 

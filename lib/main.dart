@@ -89,6 +89,7 @@ final appRouter = GoRouter(
 );
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const ProviderScope(
       child: ReelSaverApp(),

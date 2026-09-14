@@ -77,7 +77,11 @@ class SettingsScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(l10n.cacheClearFailedSnackbar(cacheClearError.toString())),
+              content: Text(
+                l10n.cacheClearFailedSnackbar(
+                  formatFriendlyErrorMessage(cacheClearError),
+                ),
+              ),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -154,13 +158,29 @@ class SettingsScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(l10n.storageClearFailedSnackbar(storageClearError.toString())),
+              content: Text(
+                l10n.storageClearFailedSnackbar(
+                  formatFriendlyErrorMessage(storageClearError),
+                ),
+              ),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
       }
     }
+  }
+
+  static String formatFriendlyErrorMessage(Object error) {
+    if (error is FileSystemException) {
+      final osMessage = error.osError?.message;
+      if (osMessage != null && osMessage.isNotEmpty) {
+        return osMessage;
+      }
+      return error.message;
+    }
+    final rawString = error.toString().replaceFirst('Exception: ', '').trim();
+    return rawString.split('\n').first;
   }
 
   String _getLocalizedThemeName(AppThemeMode mode, AppLocalizations l10n) {

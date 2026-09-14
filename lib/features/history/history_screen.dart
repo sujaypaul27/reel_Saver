@@ -62,8 +62,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Future<void> _handleOpenFile(HistoryItem item) async {
-    final file = File(item.filePath);
-    final exists = file.existsSync();
+    bool exists = false;
+    try {
+      final file = File(item.filePath);
+      exists = file.existsSync();
+    } catch (_) {
+      exists = false;
+    }
 
     if (!exists) {
       if (mounted) {
@@ -78,15 +83,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       return;
     }
 
-    if (widget.onOpenFile != null) {
-      await widget.onOpenFile!(item.filePath);
-    } else {
-      final openResult = await OpenFilex.open(item.filePath);
-      if (openResult.type != ResultType.done && mounted) {
+    try {
+      if (widget.onOpenFile != null) {
+        await widget.onOpenFile!(item.filePath);
+      } else {
+        final openResult = await OpenFilex.open(item.filePath);
+        if (openResult.type != ResultType.done && mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.couldNotOpenFile(openResult.message)),
+            ),
+          );
+        }
+      }
+    } catch (openError) {
+      if (mounted) {
         final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(l10n.couldNotOpenFile(openResult.message)),
+            content: Text(
+              l10n.couldNotOpenFile('No supported media player app found.'),
+            ),
           ),
         );
       }

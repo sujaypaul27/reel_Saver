@@ -12,6 +12,7 @@ import 'models/video_info.dart';
 class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
   final DownloadExecutionService? executionService;
   final Future<bool> Function()? requestStoragePermission;
+  static int _itemSequence = 0;
 
   DownloadQueueNotifier({
     this.executionService,
@@ -52,7 +53,8 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
     // Avoid duplicate queued entry for identical video and format
     final existingIndex = state.indexWhere(
       (item) =>
-          item.videoInfo.title == videoInfo.title &&
+          ((videoUrl != null && item.videoUrl == videoUrl) ||
+              (videoUrl == null && item.videoInfo.title == videoInfo.title)) &&
           item.selectedFormat == selectedFormat &&
           item.status == QueueItemStatus.queued,
     );
@@ -61,7 +63,7 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
     }
 
     final uniqueId =
-        '${DateTime.now().microsecondsSinceEpoch}_${selectedFormat.label}';
+        '${DateTime.now().microsecondsSinceEpoch}_${++_itemSequence}_${selectedFormat.label}';
     final newItem = QueueItem(
       id: uniqueId,
       videoInfo: videoInfo,
@@ -97,7 +99,8 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
       return state[existingIndex].id;
     }
 
-    final uniqueId = '${DateTime.now().microsecondsSinceEpoch}_shared';
+    final uniqueId =
+        '${DateTime.now().microsecondsSinceEpoch}_${++_itemSequence}_shared';
     final newItem = QueueItem(
       id: uniqueId,
       videoInfo: videoInfo,
@@ -284,13 +287,53 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
           if (item.id == itemId)
             item.copyWith(
               status: QueueItemStatus.failed,
-              errorMessage:
-                  downloadError.toString().replaceFirst('Exception: ', ''),
+              errorMessage: sanitizeDownloadErrorMessage(downloadError),
             )
           else
             item,
       ];
     }
+  }
+
+  /// Sanitizes any exception or process error into a clean, user-friendly message.
+  static String sanitizeDownloadErrorMessage(Object error) {
+    final rawText = error.toString().replaceFirst('Exception: ', '').trim();
+    final lower = rawText.toLowerCase();
+
+    if (lower.contains('private') || lower.contains('sign in')) {
+      return 'This video is private, restricted, or requires an account.';
+    }
+    if (lower.contains('unavailable') ||
+        lower.contains('not found') ||
+        lower.contains('404')) {
+      return 'This video is unavailable or has been removed.';
+    }
+    if (lower.contains('timed out') ||
+        lower.contains('socketexception') ||
+        lower.contains('network') ||
+        lower.contains('connection') ||
+        lower.contains('host lookup')) {
+      return 'Network connection error. Please check your internet connection.';
+    }
+    if (lower.contains('space') ||
+        lower.contains('disk full') ||
+        lower.contains('enospc')) {
+      return 'Insufficient disk space to save the downloaded file.';
+    }
+    if (lower.contains('permission') || lower.contains('access denied')) {
+      return 'Storage permission denied or storage access error.';
+    }
+    if (lower.contains('http error 403') || lower.contains('forbidden')) {
+      return 'Access to video stream was forbidden by the server.';
+    }
+
+    // Strip raw tracebacks or multiple lines if any
+    final firstLine = rawText.split('\n').first.trim();
+    if (firstLine.isNotEmpty && firstLine.length < 120) {
+      return firstLine;
+    }
+
+    return 'Download failed. Please check your connection and try again.';
   }
 
   /// Advances progress through simulated steps over ~2 seconds before marking completed (dev/test fallback).
