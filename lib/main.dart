@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,6 +10,7 @@ import 'features/home/screens/fetching_details_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/settings/providers/locale_provider.dart';
 import 'features/settings/settings_screen.dart';
+import 'l10n/app_localizations.dart';
 
 CustomTransitionPage<void> buildFadeSlideTransitionPage({
   required BuildContext context,
@@ -122,12 +122,8 @@ class _ReelSaverAppState extends ConsumerState<ReelSaverApp> {
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
       locale: appLocale,
-      supportedLocales: AppLanguage.supportedLocales,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       theme: AppThemes.getThemeData(selectedThemeMode),
     );
   }

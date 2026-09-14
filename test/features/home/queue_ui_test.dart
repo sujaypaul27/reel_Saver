@@ -8,6 +8,7 @@ import 'package:reel_saver/features/download_engine/models/video_info.dart';
 import 'package:reel_saver/features/download_engine/queue_service.dart';
 import 'package:reel_saver/features/home/screens/fetching_details_screen.dart';
 import 'package:reel_saver/features/home/screens/home_screen.dart';
+import 'package:reel_saver/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StubExtractionService extends ExtractionService {
@@ -61,6 +62,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: FetchingDetailsScreen(videoUrl: 'https://youtube.com/watch?v=queueTest'),
           ),
         ),
@@ -109,6 +112,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: HomeScreen(),
           ),
         ),
@@ -148,6 +153,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: HomeScreen(),
           ),
         ),
@@ -183,6 +190,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: HomeScreen(),
           ),
         ),

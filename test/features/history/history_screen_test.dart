@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:reel_saver/features/history/history_screen.dart';
 import 'package:reel_saver/features/history/history_service.dart';
 import 'package:reel_saver/features/history/models/history_item.dart';
+import 'package:reel_saver/l10n/app_localizations.dart';
 
 void main() {
   late Directory tempTestDirectory;
@@ -37,6 +38,8 @@ void main() {
         historyServiceProvider.overrideWithValue(historyService),
       ],
       child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: HistoryScreen(
           customHistoryService: historyService,
           onOpenFile: onOpenFile,

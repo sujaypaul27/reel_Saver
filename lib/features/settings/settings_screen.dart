@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../download_engine/download_execution_service.dart';
 import '../history/history_service.dart';
 import '../home/providers/auto_mode_provider.dart';
@@ -24,24 +25,24 @@ class SettingsScreen extends ConsumerWidget {
     this.customHistoryService,
   });
 
-  Future<void> _handleClearCache(BuildContext context) async {
+  Future<void> _handleClearCache(BuildContext context, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Clear Cache'),
-          content: const Text(
-            'This will delete temporary files created during video fetching (thumbnails preview cache, partial downloads). Your completed downloads and history will NOT be affected. Continue?',
+          title: Text(l10n.clearCacheDialogTitle),
+          content: Text(
+            l10n.clearCacheDialogContent,
           ),
           actions: [
             ElevatedButton(
               autofocus: true,
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('No'),
+              child: Text(l10n.noButton),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Yes'),
+              child: Text(l10n.yesButton),
             ),
           ],
         );
@@ -65,9 +66,9 @@ class SettingsScreen extends ConsumerWidget {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Temporary cache cleared successfully.'),
-              duration: Duration(milliseconds: 1500),
+            SnackBar(
+              content: Text(l10n.cacheClearedSnackbar),
+              duration: const Duration(milliseconds: 1500),
             ),
           );
         }
@@ -76,7 +77,7 @@ class SettingsScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to clear cache: $cacheClearError'),
+              content: Text(l10n.cacheClearFailedSnackbar(cacheClearError.toString())),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -85,27 +86,28 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _handleClearStorage(BuildContext context, WidgetRef ref) async {
+  Future<void> _handleClearStorage(
+      BuildContext context, WidgetRef ref, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Clear Storage'),
-          content: const Text(
-            'This will permanently delete ALL downloaded files and your entire download history. This cannot be undone. Are you sure?',
+          title: Text(l10n.clearStorageDialogTitle),
+          content: Text(
+            l10n.clearStorageDialogContent,
           ),
           actions: [
             ElevatedButton(
               autofocus: true,
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('No'),
+              child: Text(l10n.noButton),
             ),
             TextButton(
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(dialogContext).colorScheme.error,
               ),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Yes'),
+              child: Text(l10n.yesButton),
             ),
           ],
         );
@@ -140,10 +142,9 @@ class SettingsScreen extends ConsumerWidget {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content:
-                  Text('All downloaded files and history have been cleared.'),
-              duration: Duration(milliseconds: 1500),
+            SnackBar(
+              content: Text(l10n.storageClearedSnackbar),
+              duration: const Duration(milliseconds: 1500),
             ),
           );
         }
@@ -153,7 +154,7 @@ class SettingsScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to clear storage: $storageClearError'),
+              content: Text(l10n.storageClearFailedSnackbar(storageClearError.toString())),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -162,21 +163,33 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  String _getLocalizedThemeName(AppThemeMode mode, AppLocalizations l10n) {
+    switch (mode) {
+      case AppThemeMode.midnight:
+        return l10n.themeMidnight;
+      case AppThemeMode.classicLight:
+        return l10n.themeClassicLight;
+      case AppThemeMode.sunset:
+        return l10n.themeSunset;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isAutomaticDetectionEnabled = ref.watch(autoModeProvider);
     final activeLocale = ref.watch(localeProvider);
     final activeThemeMode = ref.watch(themeProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l10n.settingsTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
           Text(
-            'Appearance',
+            l10n.sectionAppearance,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -260,7 +273,7 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            themeMode.displayName,
+                            _getLocalizedThemeName(themeMode, l10n),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
@@ -288,7 +301,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Preferences',
+            l10n.sectionPreferences,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -308,12 +321,12 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 SwitchListTile(
                   secondary: const Icon(Icons.flash_on_rounded),
-                  title: const Text(
-                    'Automatic URL Detection',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  title: Text(
+                    l10n.autoDetectionSettingTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  subtitle: const Text(
-                    'Inspect clipboard on app resume to detect video links automatically.',
+                  subtitle: Text(
+                    l10n.autoDetectionSettingSubtitle,
                   ),
                   value: isAutomaticDetectionEnabled,
                   onChanged: (newValue) {
@@ -323,9 +336,9 @@ class SettingsScreen extends ConsumerWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
-                  title: const Text(
-                    'App Language',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  title: Text(
+                    l10n.appLanguageTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   subtitle: Text(
                     AppLanguage.fromLocale(activeLocale).displayName,
@@ -355,7 +368,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Storage Management',
+            l10n.sectionStorageManagement,
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -375,15 +388,15 @@ class SettingsScreen extends ConsumerWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.cached_rounded),
-                  title: const Text(
-                    'Clear Cache',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  title: Text(
+                    l10n.clearCacheTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  subtitle: const Text(
-                    'Delete temporary thumbnails and partial fetch files without affecting completed downloads.',
+                  subtitle: Text(
+                    l10n.clearCacheSubtitle,
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => _handleClearCache(context),
+                  onTap: () => _handleClearCache(context, l10n),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -392,17 +405,17 @@ class SettingsScreen extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.error,
                   ),
                   title: Text(
-                    'Clear Storage',
+                    l10n.clearStorageTitle,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                  subtitle: const Text(
-                    'Permanently delete all downloaded videos and wipe your download history.',
+                  subtitle: Text(
+                    l10n.clearStorageSubtitle,
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => _handleClearStorage(context, ref),
+                  onTap: () => _handleClearStorage(context, ref, l10n),
                 ),
               ],
             ),

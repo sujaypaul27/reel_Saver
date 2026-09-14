@@ -10,6 +10,7 @@ import 'package:reel_saver/features/clipboard_engine/models/url_type.dart';
 import 'package:reel_saver/features/home/providers/auto_mode_provider.dart';
 import 'package:reel_saver/features/home/screens/fetching_details_screen.dart';
 import 'package:reel_saver/features/home/screens/home_screen.dart';
+import 'package:reel_saver/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget createTestWidget({
@@ -35,6 +36,8 @@ Widget createTestWidget({
     overrides: overrides,
     child: MaterialApp.router(
       routerConfig: testRouter,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     ),
   );
 }
@@ -83,6 +86,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: MaterialApp.router(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             routerConfig: GoRouter(
               initialLocation: '/',
               routes: [
@@ -128,6 +133,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: MaterialApp.router(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             routerConfig: GoRouter(
               initialLocation: '/',
               routes: [

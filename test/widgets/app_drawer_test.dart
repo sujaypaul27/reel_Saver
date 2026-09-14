@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reel_saver/l10n/app_localizations.dart';
 import 'package:reel_saver/widgets/app_drawer.dart';
 
 void main() {
@@ -44,6 +45,8 @@ void main() {
 
     return MaterialApp.router(
       routerConfig: router,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
     );
   }
 

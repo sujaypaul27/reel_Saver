@@ -1,0 +1,361 @@
+{
+  "@@locale": "en",
+  "appName": "Reel Saver",
+  "@appName": {
+    "description": "The title of the application"
+  },
+  "appTagline": "Video Downloader & Manager",
+  "@appTagline": {
+    "description": "Application subtitle / tagline shown in navigation drawer"
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Navigation link label for Home screen"
+  },
+  "navHistory": "Download History",
+  "@navHistory": {
+    "description": "Navigation link label for History screen"
+  },
+  "navSettings": "Settings",
+  "@navSettings": {
+    "description": "Navigation link label for Settings screen"
+  },
+  "menuTooltip": "Menu",
+  "@menuTooltip": {
+    "description": "Tooltip for drawer menu icon"
+  },
+  "clearTooltip": "Clear",
+  "@clearTooltip": {
+    "description": "Tooltip for clear text button"
+  },
+  "autoDetectionTitle": "Automatic Detection",
+  "@autoDetectionTitle": {
+    "description": "Title for automatic clipboard detection switch"
+  },
+  "autoDetectionSubtitleActive": "Clipboard is monitored automatically",
+  "@autoDetectionSubtitleActive": {
+    "description": "Subtitle when clipboard automatic detection is enabled"
+  },
+  "autoDetectionSubtitleInactive": "Manual URL paste mode active",
+  "@autoDetectionSubtitleInactive": {
+    "description": "Subtitle when clipboard automatic detection is disabled"
+  },
+  "invalidClipboardBanner": "No valid Instagram or YouTube link found in clipboard.",
+  "@invalidClipboardBanner": {
+    "description": "Banner message when clipboard text is not a valid video link"
+  },
+  "dismissAction": "Dismiss",
+  "@dismissAction": {
+    "description": "Action label to dismiss the banner"
+  },
+  "urlInputLabel": "Video or Reel URL",
+  "@urlInputLabel": {
+    "description": "Label for the URL text input"
+  },
+  "urlInputHint": "Paste YouTube or Instagram link here",
+  "@urlInputHint": {
+    "description": "Hint text inside the URL text input"
+  },
+  "checkUrlButton": "Check URL",
+  "@checkUrlButton": {
+    "description": "Button to validate and fetch details for entered URL"
+  },
+  "invalidUrlError": "Invalid link. Please paste a valid Instagram Reel or YouTube video URL.",
+  "@invalidUrlError": {
+    "description": "Inline error message when invalid URL is submitted"
+  },
+  "downloadsInProgress": "{count, plural, =1{1 download in progress} other{{count} downloads in progress}}",
+  "@downloadsInProgress": {
+    "description": "Banner text indicating number of active downloads in progress",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadQueueTitle": "Download Queue",
+  "@downloadQueueTitle": {
+    "description": "Title of the download queue bottom sheet"
+  },
+  "clearCompletedButton": "Clear Completed",
+  "@clearCompletedButton": {
+    "description": "Button to clear completed items from queue"
+  },
+  "noItemsInQueue": "No items in download queue.",
+  "@noItemsInQueue": {
+    "description": "Empty state text in the download queue sheet"
+  },
+  "qualityNotSelected": "Quality not selected",
+  "@qualityNotSelected": {
+    "description": "Label for items added from share sheet without chosen quality"
+  },
+  "selectQualityButton": "Select Quality",
+  "@selectQualityButton": {
+    "description": "Button to choose quality for shared item"
+  },
+  "statusQueued": "Queued",
+  "@statusQueued": {
+    "description": "Queue item status label: queued"
+  },
+  "statusCompleted": "Completed",
+  "@statusCompleted": {
+    "description": "Queue item status label: completed"
+  },
+  "statusFailed": "Failed",
+  "@statusFailed": {
+    "description": "Queue item status label: failed"
+  },
+  "retryButton": "Retry",
+  "@retryButton": {
+    "description": "Button label to retry an operation"
+  },
+  "downloadFailedTitle": "Download Failed",
+  "@downloadFailedTitle": {
+    "description": "Title of download failure dialog"
+  },
+  "unknownErrorMessage": "An unknown error occurred while downloading this video.",
+  "@unknownErrorMessage": {
+    "description": "Fallback error message when error reason is unavailable"
+  },
+  "closeButton": "Close",
+  "@closeButton": {
+    "description": "Button label to close a dialog"
+  },
+  "retryDownloadButton": "Retry Download",
+  "@retryDownloadButton": {
+    "description": "Button label to retry a failed download"
+  },
+  "storagePermissionTitle": "Storage Permission Required",
+  "@storagePermissionTitle": {
+    "description": "Title of storage permission dialog"
+  },
+  "storagePermissionContent": "Reel Saver requires storage access to save downloaded videos and audio to your device. Please grant permission in App Settings.",
+  "@storagePermissionContent": {
+    "description": "Explanation why storage permission is required"
+  },
+  "cancelButton": "Cancel",
+  "@cancelButton": {
+    "description": "Cancel button label"
+  },
+  "openSettingsButton": "Open Settings",
+  "@openSettingsButton": {
+    "description": "Button label to open app settings in device settings"
+  },
+  "fetchingDetailsTitle": "Fetching Details",
+  "@fetchingDetailsTitle": {
+    "description": "App bar title while fetching video details"
+  },
+  "selectFormatTitle": "Select Format",
+  "@selectFormatTitle": {
+    "description": "App bar title when video details and formats are ready"
+  },
+  "fetchingLabel": "Fetching...",
+  "@fetchingLabel": {
+    "description": "Progress label during video details extraction"
+  },
+  "fetchErrorDescription": "Couldn't fetch video details. Please check the link and try again.",
+  "@fetchErrorDescription": {
+    "description": "Error message when details extraction fails"
+  },
+  "downloadFormatTooltip": "Download {label}",
+  "@downloadFormatTooltip": {
+    "description": "Tooltip on format download icon button",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadingFormatSnackbar": "Downloading {label}...",
+  "@downloadingFormatSnackbar": {
+    "description": "Snackbar shown when single format download starts",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadSelectedButton": "Download Selected",
+  "@downloadSelectedButton": {
+    "description": "Button label to download selected formats when empty"
+  },
+  "downloadSelectedWithCountButton": "Download Selected ({count})",
+  "@downloadSelectedWithCountButton": {
+    "description": "Button label to download selected formats with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "startedDownloadingFormatsSnackbar": "Started downloading {count, plural, =1{1 format} other{{count} formats}}...",
+  "@startedDownloadingFormatsSnackbar": {
+    "description": "Snackbar shown when batch downloading formats",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "downloadHistoryTitle": "Download History",
+  "@downloadHistoryTitle": {
+    "description": "App bar title on download history screen"
+  },
+  "fileNotFoundAt": "File not found at: {filePath}",
+  "@fileNotFoundAt": {
+    "description": "Snackbar when local file does not exist",
+    "placeholders": {
+      "filePath": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotOpenFile": "Could not open file: {error}",
+  "@couldNotOpenFile": {
+    "description": "Snackbar when opening file in external player fails",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteDownloadTitle": "Delete Download",
+  "@deleteDownloadTitle": {
+    "description": "Title of download deletion dialog"
+  },
+  "deleteConfirmationMessage": "Delete this file permanently? This cannot be undone.",
+  "@deleteConfirmationMessage": {
+    "description": "Confirmation message when permanently deleting a file"
+  },
+  "deleteButton": "Delete",
+  "@deleteButton": {
+    "description": "Delete button label"
+  },
+  "deletedItemSnackbar": "Deleted \"{title}\"",
+  "@deletedItemSnackbar": {
+    "description": "Snackbar confirming item was deleted",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "noDownloadsYet": "No downloads yet.",
+  "@noDownloadsYet": {
+    "description": "Empty state label on history screen"
+  },
+  "playOpenTooltip": "Play / Open",
+  "@playOpenTooltip": {
+    "description": "Tooltip on play button"
+  },
+  "deleteTooltip": "Delete",
+  "@deleteTooltip": {
+    "description": "Tooltip on delete button"
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "App bar title for Settings screen"
+  },
+  "sectionAppearance": "Appearance",
+  "@sectionAppearance": {
+    "description": "Appearance section header in settings"
+  },
+  "themeMidnight": "Midnight",
+  "@themeMidnight": {
+    "description": "Display name for Midnight theme"
+  },
+  "themeClassicLight": "Classic Light",
+  "@themeClassicLight": {
+    "description": "Display name for Classic Light theme"
+  },
+  "themeSunset": "Sunset",
+  "@themeSunset": {
+    "description": "Display name for Sunset theme"
+  },
+  "sectionPreferences": "Preferences",
+  "@sectionPreferences": {
+    "description": "Preferences section header in settings"
+  },
+  "autoDetectionSettingTitle": "Automatic URL Detection",
+  "@autoDetectionSettingTitle": {
+    "description": "Title of automatic detection setting tile"
+  },
+  "autoDetectionSettingSubtitle": "Inspect clipboard on app resume to detect video links automatically.",
+  "@autoDetectionSettingSubtitle": {
+    "description": "Subtitle describing automatic detection behavior"
+  },
+  "appLanguageTitle": "App Language",
+  "@appLanguageTitle": {
+    "description": "Title of application language setting tile"
+  },
+  "sectionStorageManagement": "Storage Management",
+  "@sectionStorageManagement": {
+    "description": "Storage management section header in settings"
+  },
+  "clearCacheTitle": "Clear Cache",
+  "@clearCacheTitle": {
+    "description": "Title of clear cache setting"
+  },
+  "clearCacheSubtitle": "Delete temporary thumbnails and partial fetch files without affecting completed downloads.",
+  "@clearCacheSubtitle": {
+    "description": "Subtitle describing clear cache functionality"
+  },
+  "clearCacheDialogTitle": "Clear Cache",
+  "@clearCacheDialogTitle": {
+    "description": "Title of clear cache confirmation dialog"
+  },
+  "clearCacheDialogContent": "This will delete temporary files created during video fetching (thumbnails preview cache, partial downloads). Your completed downloads and history will NOT be affected. Continue?",
+  "@clearCacheDialogContent": {
+    "description": "Message in clear cache dialog"
+  },
+  "noButton": "No",
+  "@noButton": {
+    "description": "No button label"
+  },
+  "yesButton": "Yes",
+  "@yesButton": {
+    "description": "Yes button label"
+  },
+  "cacheClearedSnackbar": "Temporary cache cleared successfully.",
+  "@cacheClearedSnackbar": {
+    "description": "Snackbar confirming cache cleanup"
+  },
+  "cacheClearFailedSnackbar": "Failed to clear cache: {error}",
+  "@cacheClearFailedSnackbar": {
+    "description": "Snackbar reporting cache cleanup failure",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "clearStorageTitle": "Clear Storage",
+  "@clearStorageTitle": {
+    "description": "Title of clear storage setting"
+  },
+  "clearStorageSubtitle": "Permanently delete all downloaded videos and wipe your download history.",
+  "@clearStorageSubtitle": {
+    "description": "Subtitle describing clear storage functionality"
+  },
+  "clearStorageDialogTitle": "Clear Storage",
+  "@clearStorageDialogTitle": {
+    "description": "Title of clear storage confirmation dialog"
+  },
+  "clearStorageDialogContent": "This will permanently delete ALL downloaded files and your entire download history. This cannot be undone. Are you sure?",
+  "@clearStorageDialogContent": {
+    "description": "Message in clear storage confirmation dialog"
+  },
+  "storageClearedSnackbar": "All downloaded files and history have been cleared.",
+  "@storageClearedSnackbar": {
+    "description": "Snackbar confirming storage wiped"
+  },
+  "storageClearFailedSnackbar": "Failed to clear storage: {error}",
+  "@storageClearFailedSnackbar": {
+    "description": "Snackbar reporting storage clear failure",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
+}

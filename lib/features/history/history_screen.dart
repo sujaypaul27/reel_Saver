@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
 
+import '../../l10n/app_localizations.dart';
 import 'history_service.dart';
 import 'models/history_item.dart';
 
@@ -66,9 +67,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     if (!exists) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('File not found at: ${item.filePath}'),
+            content: Text(l10n.fileNotFoundAt(item.filePath)),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -81,9 +83,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     } else {
       final openResult = await OpenFilex.open(item.filePath);
       if (openResult.type != ResultType.done && mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not open file: ${openResult.message}'),
+            content: Text(l10n.couldNotOpenFile(openResult.message)),
           ),
         );
       }
@@ -91,26 +94,25 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Future<void> _confirmAndDeleteItem(HistoryItem item) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete Download'),
-          content: const Text(
-            'Delete this file permanently? This cannot be undone.',
-          ),
+          title: Text(l10n.deleteDownloadTitle),
+          content: Text(l10n.deleteConfirmationMessage),
           actions: [
             ElevatedButton(
               autofocus: true,
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancelButton),
             ),
             TextButton(
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(dialogContext).colorScheme.error,
               ),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: Text(l10n.deleteButton),
             ),
           ],
         );
@@ -133,7 +135,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Deleted "${item.title}"'),
+            content: Text(l10n.deletedItemSnackbar(item.title)),
             duration: const Duration(milliseconds: 1500),
           ),
         );
@@ -144,15 +146,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Download History'),
+        title: Text(l10n.downloadHistoryTitle),
       ),
-      body: _buildBody(),
+      body: _buildBody(l10n),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(AppLocalizations l10n) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -161,19 +164,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     final items = _historyItems ?? [];
     if (items.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.history_toggle_off_rounded,
               size: 64,
               color: Colors.grey,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              'No downloads yet.',
-              style: TextStyle(
+              l10n.noDownloadsYet,
+              style: const TextStyle(
                 fontSize: 18,
                 color: Colors.grey,
                 fontWeight: FontWeight.w500,
@@ -262,14 +265,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.play_circle_fill_rounded),
-                      tooltip: 'Play / Open',
+                      tooltip: l10n.playOpenTooltip,
                       color: Theme.of(context).colorScheme.primary,
                       iconSize: 32,
                       onPressed: () => _handleOpenFile(item),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline_rounded),
-                      tooltip: 'Delete',
+                      tooltip: l10n.deleteTooltip,
                       color: Theme.of(context).colorScheme.error,
                       iconSize: 22,
                       onPressed: () => _confirmAndDeleteItem(item),

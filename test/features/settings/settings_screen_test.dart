@@ -10,6 +10,7 @@ import 'package:reel_saver/features/history/models/history_item.dart';
 import 'package:reel_saver/features/home/providers/auto_mode_provider.dart';
 import 'package:reel_saver/features/settings/providers/locale_provider.dart';
 import 'package:reel_saver/features/settings/settings_screen.dart';
+import 'package:reel_saver/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -47,6 +48,8 @@ void main() {
         ...overrides,
       ],
       child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: SettingsScreen(
           customTempDirectory: mockCacheDirectory,
           customDownloadsDirectory: mockDownloadsDirectory,
@@ -304,6 +307,8 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: SettingsScreen(
               customTempDirectory: mockCacheDirectory,
               customDownloadsDirectory: mockDownloadsDirectory,
@@ -328,6 +333,57 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(container.read(themeProvider), AppThemeMode.sunset);
+    });
+
+    testWidgets('dynamic language switching re-renders SettingsScreen without restart',
+        (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            historyServiceProvider.overrideWithValue(testHistoryService),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              final locale = ref.watch(localeProvider);
+              return MaterialApp(
+                locale: locale,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: SettingsScreen(
+                  customTempDirectory: mockCacheDirectory,
+                  customDownloadsDirectory: mockDownloadsDirectory,
+                  customHistoryService: testHistoryService,
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially English
+      expect(find.text('Appearance'), findsOneWidget);
+      expect(find.text('Preferences'), findsOneWidget);
+
+      // Open language dropdown and select Hindi
+      await tester.tap(find.byType(DropdownButton<Locale>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hindi').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify strings re-rendered into Hindi
+      expect(find.text('रूप-रंग'), findsOneWidget);
+      expect(find.text('प्राथमिकताएं'), findsOneWidget);
+
+      // Switch to Spanish
+      await tester.tap(find.byType(DropdownButton<Locale>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Spanish').hitTestable());
+      await tester.pumpAndSettle();
+
+      // Verify strings re-rendered into Spanish
+      expect(find.text('Apariencia'), findsOneWidget);
+      expect(find.text('Preferencias'), findsOneWidget);
     });
   });
 }

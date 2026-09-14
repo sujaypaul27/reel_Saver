@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../l10n/app_localizations.dart';
+
 /// Navigation drawer providing direct access to Home, Download History, and Settings.
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -8,6 +10,7 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentRoutePath = GoRouterState.of(context).uri.toString();
+    final l10n = AppLocalizations.of(context)!;
 
     return Drawer(
       child: ListView(
@@ -28,7 +31,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Reel Saver',
+                  l10n.appName,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -36,7 +39,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Video Downloader & Manager',
+                  l10n.appTagline,
                   style: TextStyle(
                     fontSize: 13,
                     color: Theme.of(context)
@@ -50,7 +53,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.home_outlined),
-            title: const Text('Home'),
+            title: Text(l10n.navHome),
             selected: currentRoutePath == '/',
             onTap: () {
               Navigator.of(context).pop();
@@ -61,7 +64,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.history_rounded),
-            title: const Text('Download History'),
+            title: Text(l10n.navHistory),
             selected: currentRoutePath == '/history',
             onTap: () {
               Navigator.of(context).pop();
@@ -72,7 +75,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
-            title: const Text('Settings'),
+            title: Text(l10n.navSettings),
             selected: currentRoutePath == '/settings',
             onTap: () {
               Navigator.of(context).pop();

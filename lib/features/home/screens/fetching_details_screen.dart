@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/circular_percentage_indicator.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../download_engine/extraction_service.dart';
 import '../../download_engine/models/queue_item.dart';
 import '../../download_engine/models/video_info.dart';
@@ -107,22 +108,25 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(_status == FetchStatus.success ? 'Select Format' : 'Fetching Details'),
+        title: Text(_status == FetchStatus.success
+            ? l10n.selectFormatTitle
+            : l10n.fetchingDetailsTitle),
       ),
       body: SafeArea(
         child: switch (_status) {
-          FetchStatus.loading => _buildLoadingView(),
-          FetchStatus.error => _buildErrorView(),
-          FetchStatus.success => _buildResultsView(),
+          FetchStatus.loading => _buildLoadingView(l10n),
+          FetchStatus.error => _buildErrorView(l10n),
+          FetchStatus.success => _buildResultsView(l10n),
         },
       ),
     );
   }
 
   /// 1. Loading view with progress percentage animation
-  Widget _buildLoadingView() {
+  Widget _buildLoadingView(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -135,9 +139,9 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
               strokeWidth: 8,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Fetching...',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            Text(
+              l10n.fetchingLabel,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
@@ -153,7 +157,7 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
   }
 
   /// 2. Error view when video extraction fails
-  Widget _buildErrorView() {
+  Widget _buildErrorView(AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -166,15 +170,15 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
               color: Colors.red,
             ),
             const SizedBox(height: 16),
-            const Text(
-              "Couldn't fetch video details. Please check the link and try again.",
+            Text(
+              l10n.fetchErrorDescription,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(l10n.retryButton),
               onPressed: _initAndStartExtraction,
             ),
           ],
@@ -184,7 +188,7 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
   }
 
   /// 3. Results view: Thumbnail + Title + Duration + Dynamic Format List + Download Buttons
-  Widget _buildResultsView() {
+  Widget _buildResultsView(AppLocalizations l10n) {
     final videoInfo = _videoInfo;
     if (videoInfo == null) return const SizedBox.shrink();
 
@@ -345,15 +349,15 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
                                   : null,
                               secondary: IconButton(
                                 icon: const Icon(Icons.download_rounded),
-                                tooltip: 'Download ${format.label}',
+                                tooltip: l10n.downloadFormatTooltip(format.label),
                                 onPressed: () {
                                   ref
                                       .read(downloadQueueProvider.notifier)
                                       .startSingleDownload(videoInfo, format);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content:
-                                          Text('Downloading ${format.label}...'),
+                                      content: Text(l10n
+                                          .downloadingFormatSnackbar(format.label)),
                                       duration: const Duration(seconds: 2),
                                     ),
                                   );
@@ -386,15 +390,17 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
                                     .startQueuedDownloads();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Started downloading $count format(s)...'),
+                                    content: Text(l10n
+                                        .startedDownloadingFormatsSnackbar(count)),
                                     duration: const Duration(seconds: 2),
                                   ),
                                 );
                               },
                         child: Text(
                           queuedFormatsForThisVideo.isEmpty
-                              ? 'Download Selected'
-                              : 'Download Selected (${queuedFormatsForThisVideo.length})',
+                              ? l10n.downloadSelectedButton
+                              : l10n.downloadSelectedWithCountButton(
+                                  queuedFormatsForThisVideo.length),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

@@ -9,6 +9,7 @@ import '../../clipboard_engine/models/clipboard_status.dart';
 import '../../clipboard_engine/models/url_type.dart';
 import '../../download_engine/models/queue_item.dart';
 import '../../download_engine/queue_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../widgets/app_drawer.dart';
 import '../providers/auto_mode_provider.dart';
 
@@ -23,7 +24,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController _urlTextController = TextEditingController();
-  String? _manualUrlErrorMessage;
+  bool _hasManualUrlError = false;
   bool _showInvalidClipboardBanner = false;
 
   @override
@@ -39,12 +40,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (detectedUrlType == UrlType.invalid) {
       setState(() {
-        _manualUrlErrorMessage =
-            'Invalid link. Please paste a valid Instagram Reel or YouTube video URL.';
+        _hasManualUrlError = true;
       });
     } else {
       setState(() {
-        _manualUrlErrorMessage = null;
+        _hasManualUrlError = false;
       });
       context.push('/fetching-details', extra: enteredUrl.trim());
     }
@@ -59,7 +59,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.read(clipboardWatcherProvider.notifier).setEnabled(nextValue);
       if (nextValue) {
         setState(() {
-          _manualUrlErrorMessage = null;
+          _hasManualUrlError = false;
         });
       } else {
         setState(() {
@@ -96,18 +96,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             item.status == QueueItemStatus.failed)
         .toList();
 
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         leading: Builder(
           builder: (scaffoldContext) => IconButton(
             icon: const Icon(Icons.menu),
-            tooltip: 'Menu',
+            tooltip: l10n.menuTooltip,
             onPressed: () {
               Scaffold.of(scaffoldContext).openDrawer();
             },
           ),
         ),
-        title: const Text('Reel Saver'),
+        title: Text(l10n.appName),
       ),
       drawer: const AppDrawer(),
       bottomSheet: activeDownloads.isEmpty
@@ -116,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               elevation: 8,
               color: Theme.of(context).colorScheme.primaryContainer,
               child: InkWell(
-                onTap: () => _openQueueProgressBottomSheet(context),
+                onTap: () => _openQueueProgressBottomSheet(context, l10n),
                 child: SafeArea(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -126,7 +128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            '${activeDownloads.length} download${activeDownloads.length == 1 ? '' : 's'} in progress',
+                            l10n.downloadsInProgress(activeDownloads.length),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -148,14 +150,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               // 1. Top of screen: Labeled toggle switch for Automatic Detection
               SwitchListTile(
-                title: const Text(
-                  'Automatic Detection',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                title: Text(
+                  l10n.autoDetectionTitle,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 subtitle: Text(
                   isAutomaticDetectionEnabled
-                      ? 'Clipboard is monitored automatically'
-                      : 'Manual URL paste mode active',
+                      ? l10n.autoDetectionSubtitleActive
+                      : l10n.autoDetectionSubtitleInactive,
                 ),
                 value: isAutomaticDetectionEnabled,
                 onChanged: (bool newToggleValue) {
@@ -167,8 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // 2. Automatic mode: Dismissible invalid clipboard banner
               if (isAutomaticDetectionEnabled && _showInvalidClipboardBanner)
                 MaterialBanner(
-                  content: const Text(
-                    'No valid Instagram or YouTube link found in clipboard.',
+                  content: Text(
+                    l10n.invalidClipboardBanner,
                   ),
                   actions: [
                     TextButton(
@@ -177,7 +179,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           _showInvalidClipboardBanner = false;
                         });
                       },
-                      child: const Text('Dismiss'),
+                      child: Text(l10n.dismissAction),
                     ),
                   ],
                 ),
@@ -188,26 +190,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 TextField(
                   controller: _urlTextController,
                   decoration: InputDecoration(
-                    labelText: 'Video or Reel URL',
-                    hintText: 'Paste YouTube or Instagram link here',
+                    labelText: l10n.urlInputLabel,
+                    hintText: l10n.urlInputHint,
                     border: const OutlineInputBorder(),
-                    errorText: _manualUrlErrorMessage,
+                    errorText: _hasManualUrlError ? l10n.invalidUrlError : null,
                     errorMaxLines: 2,
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.clear),
-                      tooltip: 'Clear',
+                      tooltip: l10n.clearTooltip,
                       onPressed: () {
                         _urlTextController.clear();
                         setState(() {
-                          _manualUrlErrorMessage = null;
+                          _hasManualUrlError = false;
                         });
                       },
                     ),
                   ),
                   onChanged: (text) {
-                    if (_manualUrlErrorMessage != null) {
+                    if (_hasManualUrlError) {
                       setState(() {
-                        _manualUrlErrorMessage = null;
+                        _hasManualUrlError = false;
                       });
                     }
                   },
@@ -215,7 +217,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _validateAndCheckManualUrl,
-                  child: const Text('Check URL'),
+                  child: Text(l10n.checkUrlButton),
                 ),
               ],
             ],
@@ -225,7 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _openQueueProgressBottomSheet(BuildContext context) {
+  void _openQueueProgressBottomSheet(BuildContext context, AppLocalizations l10n) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -259,9 +261,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Download Queue',
-                            style: TextStyle(
+                          Text(
+                            l10n.downloadQueueTitle,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -270,15 +272,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             onPressed: () {
                               ref.read(downloadQueueProvider.notifier).clearCompleted();
                             },
-                            child: const Text('Clear Completed'),
+                            child: Text(l10n.clearCompletedButton),
                           ),
                         ],
                       ),
                       const Divider(),
                       if (queue.isEmpty)
-                        const Expanded(
+                        Expanded(
                           child: Center(
-                            child: Text('No items in download queue.'),
+                            child: Text(l10n.noItemsInQueue),
                           ),
                         )
                       else
@@ -305,7 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       Row(
                                         children: [
                                           Text(
-                                            'Quality not selected',
+                                            l10n.qualityNotSelected,
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.orange.shade800,
@@ -322,7 +324,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                               ),
                                             ),
                                             icon: const Icon(Icons.tune_rounded, size: 16),
-                                            label: const Text('Select Quality'),
+                                            label: Text(l10n.selectQualityButton),
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                               context.push(
@@ -344,7 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             ),
                                           ),
                                           const Spacer(),
-                                          _buildQueueStatusIndicator(item),
+                                          _buildQueueStatusIndicator(item, l10n),
                                         ],
                                       ),
                                       if (item.status == QueueItemStatus.downloading) ...[
@@ -371,12 +373,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildQueueStatusIndicator(QueueItem item) {
+  Widget _buildQueueStatusIndicator(QueueItem item, AppLocalizations l10n) {
     switch (item.status) {
       case QueueItemStatus.queued:
-        return const Text(
-          'Queued',
-          style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
+        return Text(
+          l10n.statusQueued,
+          style: const TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
         );
       case QueueItemStatus.downloading:
         return Text(
@@ -384,14 +386,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
         );
       case QueueItemStatus.completed:
-        return const Row(
+        return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle, size: 14, color: Colors.green),
-            SizedBox(width: 4),
+            const Icon(Icons.check_circle, size: 14, color: Colors.green),
+            const SizedBox(width: 4),
             Text(
-              'Completed',
-              style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
+              l10n.statusCompleted,
+              style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
             ),
           ],
         );
@@ -400,18 +402,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             InkWell(
-              onTap: () => _showErrorDetailsDialog(item),
+              onTap: () => _showErrorDetailsDialog(item, l10n),
               borderRadius: BorderRadius.circular(4),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.error_outline_rounded, size: 14, color: Colors.red),
-                    SizedBox(width: 4),
+                    const Icon(Icons.error_outline_rounded, size: 14, color: Colors.red),
+                    const SizedBox(width: 4),
                     Text(
-                      'Failed',
-                      style: TextStyle(
+                      l10n.statusFailed,
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Colors.red,
                         fontWeight: FontWeight.bold,
@@ -427,48 +429,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               ),
-              onPressed: () => _retryDownloadWithPermission(item.id),
-              child: const Text('Retry', style: TextStyle(fontSize: 12)),
+              onPressed: () => _retryDownloadWithPermission(item.id, l10n),
+              child: Text(l10n.retryButton, style: const TextStyle(fontSize: 12)),
             ),
           ],
         );
     }
   }
 
-  void _showErrorDetailsDialog(QueueItem item) {
+  void _showErrorDetailsDialog(QueueItem item, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Download Failed'),
+        title: Text(l10n.downloadFailedTitle),
         content: Text(
-          item.errorMessage ??
-              'An unknown error occurred while downloading this video.',
+          item.errorMessage ?? l10n.unknownErrorMessage,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Close'),
+            child: Text(l10n.closeButton),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              _retryDownloadWithPermission(item.id);
+              _retryDownloadWithPermission(item.id, l10n);
             },
-            child: const Text('Retry Download'),
+            child: Text(l10n.retryDownloadButton),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _retryDownloadWithPermission(String itemId) async {
-    final hasPermission = await _checkAndRequestStoragePermission();
+  Future<void> _retryDownloadWithPermission(String itemId, AppLocalizations l10n) async {
+    final hasPermission = await _checkAndRequestStoragePermission(l10n);
     if (hasPermission) {
       ref.read(downloadQueueProvider.notifier).retryDownload(itemId);
     }
   }
 
-  Future<bool> _checkAndRequestStoragePermission() async {
+  Future<bool> _checkAndRequestStoragePermission(AppLocalizations l10n) async {
     try {
       var status = await Permission.storage.status;
       if (!status.isGranted) {
@@ -483,21 +484,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         await showDialog(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Storage Permission Required'),
-            content: const Text(
-              'Reel Saver requires storage access to save downloaded videos and audio to your device. Please grant permission in App Settings.',
+            title: Text(l10n.storagePermissionTitle),
+            content: Text(
+              l10n.storagePermissionContent,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
+                child: Text(l10n.cancelButton),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
                   openAppSettings();
                 },
-                child: const Text('Open Settings'),
+                child: Text(l10n.openSettingsButton),
               ),
             ],
           ),

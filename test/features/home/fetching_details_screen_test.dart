@@ -6,6 +6,8 @@ import 'package:reel_saver/features/download_engine/models/video_format.dart';
 import 'package:reel_saver/features/download_engine/models/video_info.dart';
 import 'package:reel_saver/features/home/screens/fetching_details_screen.dart';
 
+import 'package:reel_saver/l10n/app_localizations.dart';
+
 class MockExtractionService extends ExtractionService {
   final VideoInfo? response;
   final bool shouldThrow;
@@ -58,6 +60,8 @@ Widget createTestApp({required ExtractionService extractionService}) {
       extractionServiceProvider.overrideWithValue(extractionService),
     ],
     child: const MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: FetchingDetailsScreen(
         videoUrl: 'https://www.youtube.com/watch?v=sample123',
       ),
