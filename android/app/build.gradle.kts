@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.reel_saver"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

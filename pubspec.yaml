@@ -1,5 +1,5 @@
 name: reel_saver
-description: "A Flutter project for downloading Instagram reels and YouTube videos."
+description: "Inst/Tube Saver - Fast and modern downloader for Instagram reels and YouTube videos."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -27,7 +27,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icon/icon.png"
 
 flutter:
   uses-material-design: true
   generate: true
+
