@@ -7,17 +7,67 @@ import 'download_execution_service.dart';
 import 'models/queue_item.dart';
 import 'models/video_format.dart';
 import 'models/video_info.dart';
+import 'queue_storage_service.dart';
 
 /// StateNotifier responsible for managing the download queue.
 class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
   final DownloadExecutionService? executionService;
   final Future<bool> Function()? requestStoragePermission;
+  final QueueStorageService storageService;
   static int _itemSequence = 0;
 
   DownloadQueueNotifier({
     this.executionService,
     this.requestStoragePermission,
-  }) : super(const <QueueItem>[]);
+    QueueStorageService? storageService,
+    List<QueueItem>? initialItems,
+  })  : storageService = storageService ?? QueueStorageService(),
+        super(initialItems ?? const <QueueItem>[]) {
+    if (initialItems == null) {
+      _loadInitialQueue();
+    }
+  }
+
+  /// Asynchronously rehydrates queue from local storage if not provided on startup.
+  Future<void> _loadInitialQueue() async {
+    final loadedItems = await storageService.loadQueue();
+    if (mounted && loadedItems.isNotEmpty && state.isEmpty) {
+      state = loadedItems;
+    }
+  }
+
+  @override
+  set state(List<QueueItem> value) {
+    final previous = super.state;
+    super.state = value;
+    if (_hasMeaningfulMutation(previous, value)) {
+      storageService.saveQueue(value);
+    }
+  }
+
+  /// Evaluates whether the state change represents a discrete queue mutation
+  /// (addition, removal, status transition, or format change) rather than
+  /// a high-frequency download progress percentage tick.
+  bool _hasMeaningfulMutation(List<QueueItem> oldState, List<QueueItem> newState) {
+    if (oldState.length != newState.length) return true;
+    for (int i = 0; i < oldState.length; i++) {
+      final oldItem = oldState[i];
+      final newItem = newState[i];
+      if (oldItem.id != newItem.id ||
+          oldItem.status != newItem.status ||
+          oldItem.selectedFormat != newItem.selectedFormat ||
+          oldItem.errorMessage != newItem.errorMessage ||
+          oldItem.downloadedFilePath != newItem.downloadedFilePath) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Explicitly flushes current queue state to persistent storage.
+  Future<void> saveToStorage() async {
+    await storageService.saveQueue(state);
+  }
 
   /// Adds a format to the queue with status [QueueItemStatus.queued].
   /// If a placeholder item with null format exists for this video, it is upgraded with the selected format.
@@ -386,10 +436,15 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
   }
 }
 
+/// Provider exposing optional initial queue items passed during startup rehydration.
+final initialDownloadQueueProvider = Provider<List<QueueItem>?>((ref) => null);
+
 /// Provider for [DownloadQueueNotifier].
 final downloadQueueProvider =
     StateNotifierProvider<DownloadQueueNotifier, List<QueueItem>>((ref) {
   return DownloadQueueNotifier(
     executionService: ref.watch(downloadExecutionServiceProvider),
+    storageService: ref.watch(queueStorageServiceProvider),
+    initialItems: ref.watch(initialDownloadQueueProvider),
   );
 });

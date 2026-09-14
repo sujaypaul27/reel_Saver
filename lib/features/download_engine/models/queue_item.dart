@@ -6,7 +6,14 @@ enum QueueItemStatus {
   queued,
   downloading,
   completed,
-  failed,
+  failed;
+
+  static QueueItemStatus fromString(String value) {
+    return QueueItemStatus.values.firstWhere(
+      (status) => status.name == value,
+      orElse: () => QueueItemStatus.queued,
+    );
+  }
 }
 
 /// Represents an individual video entry queued for download.
@@ -30,6 +37,35 @@ class QueueItem {
     this.errorMessage,
     this.downloadedFilePath,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'videoInfo': videoInfo.toJson(),
+      if (selectedFormat != null) 'selectedFormat': selectedFormat!.toJson(),
+      'status': status.name,
+      'progressPercent': progressPercent,
+      if (videoUrl != null) 'videoUrl': videoUrl,
+      if (errorMessage != null) 'errorMessage': errorMessage,
+      if (downloadedFilePath != null) 'downloadedFilePath': downloadedFilePath,
+    };
+  }
+
+  factory QueueItem.fromJson(Map<String, dynamic> json) {
+    final status = QueueItemStatus.fromString(json['status'] as String? ?? '');
+    return QueueItem(
+      id: json['id'] as String,
+      videoInfo: VideoInfo.fromJson(json['videoInfo'] as Map<String, dynamic>),
+      selectedFormat: json['selectedFormat'] != null
+          ? VideoFormat.fromJson(json['selectedFormat'] as Map<String, dynamic>)
+          : null,
+      status: status,
+      progressPercent: (json['progressPercent'] as num?)?.toDouble() ?? 0.0,
+      videoUrl: json['videoUrl'] as String?,
+      errorMessage: json['errorMessage'] as String?,
+      downloadedFilePath: json['downloadedFilePath'] as String?,
+    );
+  }
 
   QueueItem copyWith({
     VideoFormat? selectedFormat,

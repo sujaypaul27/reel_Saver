@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/clipboard_engine/share_intent_service.dart';
+import 'features/download_engine/queue_service.dart';
+import 'features/download_engine/queue_storage_service.dart';
 import 'features/history/history_screen.dart';
 import 'features/home/screens/fetching_details_screen.dart';
 import 'features/home/screens/home_screen.dart';
@@ -88,11 +90,19 @@ final appRouter = GoRouter(
   ],
 );
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load persisted queue before UI renders so items added via share-intent are restored
+  final queueStorageService = QueueStorageService();
+  final initialQueue = await queueStorageService.loadQueue();
+
   runApp(
-    const ProviderScope(
-      child: ReelSaverApp(),
+    ProviderScope(
+      overrides: [
+        initialDownloadQueueProvider.overrideWithValue(initialQueue),
+      ],
+      child: const ReelSaverApp(),
     ),
   );
 }

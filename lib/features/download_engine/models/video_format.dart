@@ -2,7 +2,14 @@
 enum FormatType {
   videoOnly,
   videoAndAudio,
-  audioOnly,
+  audioOnly;
+
+  static FormatType fromString(String value) {
+    return FormatType.values.firstWhere(
+      (type) => type.name == value,
+      orElse: () => FormatType.videoAndAudio,
+    );
+  }
 }
 
 /// Represents an available downloadable format for a video.
@@ -33,6 +40,28 @@ class VideoFormat {
     this.height,
     this.bitrate,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'label': label,
+      'type': type.name,
+      'fileExtension': fileExtension,
+      if (estimatedSizeMB != null) 'estimatedSizeMB': estimatedSizeMB,
+      if (height != null) 'height': height,
+      if (bitrate != null) 'bitrate': bitrate,
+    };
+  }
+
+  factory VideoFormat.fromJson(Map<String, dynamic> json) {
+    return VideoFormat(
+      label: json['label'] as String,
+      type: FormatType.fromString(json['type'] as String? ?? ''),
+      fileExtension: json['fileExtension'] as String,
+      estimatedSizeMB: (json['estimatedSizeMB'] as num?)?.toDouble(),
+      height: json['height'] as int?,
+      bitrate: json['bitrate'] as int?,
+    );
+  }
 
   /// Description of the media stream type following exact specification.
   String get typeDescription {

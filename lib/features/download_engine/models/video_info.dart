@@ -14,6 +14,28 @@ class VideoInfo {
     required this.formats,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'thumbnailUrl': thumbnailUrl,
+      'durationSeconds': durationSeconds,
+      'formats': formats.map((format) => format.toJson()).toList(),
+    };
+  }
+
+  factory VideoInfo.fromJson(Map<String, dynamic> json) {
+    return VideoInfo(
+      title: json['title'] as String,
+      thumbnailUrl: json['thumbnailUrl'] as String? ?? '',
+      durationSeconds: (json['durationSeconds'] as num?)?.toInt() ?? 0,
+      formats: (json['formats'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map((formatJson) => VideoFormat.fromJson(formatJson))
+              .toList() ??
+          const <VideoFormat>[],
+    );
+  }
+
   /// Formats duration into a readable "mm:ss" string (e.g. 215s -> "03:35").
   String get formattedDuration {
     final minutes = (durationSeconds ~/ 60).toString().padLeft(2, '0');
