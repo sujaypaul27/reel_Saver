@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../instagram_session_provider.dart';
@@ -12,7 +11,7 @@ import '../instagram_session_provider.dart';
 /// stored securely without plaintext logging.
 class InstagramLoginScreen extends ConsumerStatefulWidget {
   final WebViewController? customController;
-  final WebviewCookieManager? customCookieManager;
+  final WebViewCookieManager? customCookieManager;
 
   const InstagramLoginScreen({
     super.key,
@@ -27,14 +26,14 @@ class InstagramLoginScreen extends ConsumerStatefulWidget {
 
 class _InstagramLoginScreenState extends ConsumerState<InstagramLoginScreen> {
   late final WebViewController _controller;
-  late final WebviewCookieManager _cookieManager;
+  late final WebViewCookieManager _cookieManager;
   bool _isLoading = true;
   bool _isProcessingLogin = false;
 
   @override
   void initState() {
     super.initState();
-    _cookieManager = widget.customCookieManager ?? WebviewCookieManager();
+    _cookieManager = widget.customCookieManager ?? WebViewCookieManager();
 
     if (widget.customController != null) {
       _controller = widget.customController!;
@@ -70,8 +69,14 @@ class _InstagramLoginScreenState extends ConsumerState<InstagramLoginScreen> {
     if (_isProcessingLogin) return;
 
     try {
-      final cookies =
-          await _cookieManager.getCookies('https://www.instagram.com');
+      var cookies = await _cookieManager.getCookies(
+        domain: Uri.parse('https://www.instagram.com'),
+      );
+      if (cookies.isEmpty) {
+        cookies = await _cookieManager.getCookies(
+          domain: Uri.parse('https://instagram.com'),
+        );
+      }
       String? sessionId;
       String? csrfToken;
       String? dsUserId;

@@ -6,8 +6,7 @@ import 'package:reel_saver/features/auth/instagram_session_service.dart';
 import 'package:reel_saver/features/settings/settings_screen.dart';
 import 'package:reel_saver/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'package:webview_cookie_manager/webview_cookie_manager.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class FakeSecureStorage extends Fake implements FlutterSecureStorage {
   final Map<String, String> values = {};
@@ -56,12 +55,13 @@ class FakeSecureStorage extends Fake implements FlutterSecureStorage {
   }
 }
 
-class FakeWebviewCookieManager extends Fake implements WebviewCookieManager {
+class FakeWebviewCookieManager extends Fake implements WebViewCookieManager {
   bool cookiesCleared = false;
 
   @override
-  Future<void> clearCookies() async {
+  Future<bool> clearCookies() async {
     cookiesCleared = true;
+    return true;
   }
 }
 

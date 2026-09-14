@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:webview_cookie_manager/webview_cookie_manager.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 /// Exception thrown when an authenticated request to Instagram fails because the
 /// session has expired or the token is no longer valid.
@@ -39,7 +39,7 @@ class InstagramSessionService {
   static const String _keyCookieHeader = 'instagram_cookie_header';
 
   final FlutterSecureStorage secureStorage;
-  final WebviewCookieManager? webviewCookieManager;
+  final WebViewCookieManager? webviewCookieManager;
 
   const InstagramSessionService({
     this.secureStorage = const FlutterSecureStorage(
@@ -146,7 +146,7 @@ class InstagramSessionService {
     } catch (_) {}
 
     try {
-      final cookieManager = webviewCookieManager ?? WebviewCookieManager();
+      final cookieManager = webviewCookieManager ?? WebViewCookieManager();
       await cookieManager.clearCookies();
     } catch (_) {}
   }
