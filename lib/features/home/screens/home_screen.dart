@@ -9,6 +9,7 @@ import '../../clipboard_engine/models/clipboard_status.dart';
 import '../../clipboard_engine/models/url_type.dart';
 import '../../download_engine/models/queue_item.dart';
 import '../../download_engine/queue_service.dart';
+import '../../../widgets/app_drawer.dart';
 import '../providers/auto_mode_provider.dart';
 
 /// Main home screen allowing users to toggle between automatic clipboard detection
@@ -97,15 +98,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          tooltip: 'Menu',
-          onPressed: () {
-            // Placeholder menu button for upcoming settings drawer phase
-          },
+        leading: Builder(
+          builder: (scaffoldContext) => IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: 'Menu',
+            onPressed: () {
+              Scaffold.of(scaffoldContext).openDrawer();
+            },
+          ),
         ),
         title: const Text('Reel Saver'),
       ),
+      drawer: const AppDrawer(),
       bottomSheet: activeDownloads.isEmpty
           ? null
           : Material(

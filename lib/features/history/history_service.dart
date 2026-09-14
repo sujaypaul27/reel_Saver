@@ -27,11 +27,11 @@ class HistoryService {
   Future<List<HistoryItem>> getHistory() async {
     try {
       final file = await _historyFile;
-      if (!await file.exists()) {
+      if (!file.existsSync()) {
         return const <HistoryItem>[];
       }
 
-      final content = await file.readAsString();
+      final content = file.readAsStringSync();
       if (content.trim().isEmpty) {
         return const <HistoryItem>[];
       }
@@ -61,7 +61,7 @@ class HistoryService {
         updatedEntries.map((entry) => entry.toJson()).toList(),
       );
 
-      await file.writeAsString(jsonString, flush: true);
+      file.writeAsStringSync(jsonString, flush: true);
       debugPrint('[HistoryService] Saved history entry: ${newItem.title}');
     } catch (historyWriteError) {
       debugPrint('[HistoryService] Error saving history entry: $historyWriteError');
@@ -80,7 +80,7 @@ class HistoryService {
         updatedEntries.map((entry) => entry.toJson()).toList(),
       );
 
-      await file.writeAsString(jsonString, flush: true);
+      file.writeAsStringSync(jsonString, flush: true);
     } catch (historyDeleteError) {
       debugPrint('[HistoryService] Error deleting history entry: $historyDeleteError');
     }
@@ -90,8 +90,8 @@ class HistoryService {
   Future<void> clearHistory() async {
     try {
       final file = await _historyFile;
-      if (await file.exists()) {
-        await file.writeAsString('[]', flush: true);
+      if (file.existsSync()) {
+        file.writeAsStringSync('[]', flush: true);
       }
     } catch (historyClearError) {
       debugPrint('[HistoryService] Error clearing history: $historyClearError');

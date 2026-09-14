@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/clipboard_engine/share_intent_service.dart';
+import 'features/history/history_screen.dart';
 import 'features/home/screens/fetching_details_screen.dart';
 import 'features/home/screens/home_screen.dart';
+import 'features/settings/settings_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -18,6 +20,14 @@ final appRouter = GoRouter(
       builder: (context, state) => FetchingDetailsScreen(
         videoUrl: state.extra as String?,
       ),
+    ),
+    GoRoute(
+      path: '/history',
+      builder: (context, state) => const HistoryScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );
