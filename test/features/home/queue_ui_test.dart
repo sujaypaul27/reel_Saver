@@ -174,5 +174,63 @@ void main() {
       expect(find.text('Quality not selected'), findsOneWidget);
       expect(find.widgetWithText(OutlinedButton, 'Select Quality'), findsOneWidget);
     });
+
+    testWidgets('HomeScreen bottom sheet displays Failed badge and Retry button on error and shows dialog on tap', (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Add item to queue
+      final id = container.read(downloadQueueProvider.notifier).addQueueItem(
+            sampleVideo,
+            sampleVideo.formats.first,
+          );
+
+      // Simulate download failure on the item
+      final currentQueue = container.read(downloadQueueProvider);
+      container.read(downloadQueueProvider.notifier).state = [
+        for (final it in currentQueue)
+          if (it.id == id)
+            it.copyWith(
+              status: QueueItemStatus.failed,
+              errorMessage: 'Network timeout connection aborted.',
+            )
+          else
+            it,
+      ];
+      await tester.pumpAndSettle();
+
+      // Open bottom sheet
+      await tester.tap(find.text('1 download in progress'));
+      await tester.pumpAndSettle();
+
+      // Verify "Failed" indicator and "Retry" button
+      expect(find.text('Failed'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Retry'), findsOneWidget);
+
+      // Tap "Failed" indicator to open error dialog
+      await tester.tap(find.text('Failed'));
+      await tester.pumpAndSettle();
+
+      // Dialog is displayed with error message
+      expect(find.text('Download Failed'), findsOneWidget);
+      expect(find.text('Network timeout connection aborted.'), findsOneWidget);
+      expect(find.text('Retry Download'), findsOneWidget);
+      expect(find.text('Close'), findsOneWidget);
+
+      // Dismiss dialog
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      expect(find.text('Download Failed'), findsNothing);
+    });
   });
 }

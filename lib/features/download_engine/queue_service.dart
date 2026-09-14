@@ -3,13 +3,20 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'download_execution_service.dart';
 import 'models/queue_item.dart';
 import 'models/video_format.dart';
 import 'models/video_info.dart';
 
 /// StateNotifier responsible for managing the download queue.
 class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
-  DownloadQueueNotifier() : super(const <QueueItem>[]);
+  final DownloadExecutionService? executionService;
+  final Future<bool> Function()? requestStoragePermission;
+
+  DownloadQueueNotifier({
+    this.executionService,
+    this.requestStoragePermission,
+  }) : super(const <QueueItem>[]);
 
   /// Adds a format to the queue with status [QueueItemStatus.queued].
   /// If a placeholder item with null format exists for this video, it is upgraded with the selected format.
@@ -131,7 +138,7 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
     );
   }
 
-  /// Starts downloading all queued items that have a format selected, simulating progress over 2 seconds.
+  /// Starts downloading all queued items that have a format selected.
   /// Items with no format chosen are skipped silently and kept in the cart.
   Future<void> startQueuedDownloads() async {
     final queuedItems = state
@@ -144,32 +151,36 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
 
     if (queuedItems.isEmpty) return;
 
+    if (requestStoragePermission != null) {
+      final isGranted = await requestStoragePermission!();
+      if (!isGranted) {
+        debugPrint(
+          '[DownloadQueueNotifier] Storage permission not granted. Aborting queued downloads.',
+        );
+        return;
+      }
+    }
+
     debugPrint(
       '[DownloadQueueNotifier] Starting downloads for ${queuedItems.length} queued items with selected formats.',
     );
 
-    final queuedIds = queuedItems.map((item) => item.id).toSet();
-    state = [
-      for (final item in state)
-        if (queuedIds.contains(item.id))
-          item.copyWith(
-            status: QueueItemStatus.downloading,
-            progressPercent: 15.0,
-          )
-        else
-          item,
-    ];
-
     await Future.wait([
-      for (final item in queuedItems) _advanceSimulatedProgress(item.id),
+      for (final item in queuedItems) _executeDownload(item.id),
     ]);
   }
 
   /// Starts download immediately for a single format item.
   Future<void> startSingleDownload(
     VideoInfo videoInfo,
-    VideoFormat selectedFormat,
-  ) async {
+    VideoFormat selectedFormat, {
+    String? videoUrl,
+  }) async {
+    if (requestStoragePermission != null) {
+      final isGranted = await requestStoragePermission!();
+      if (!isGranted) return;
+    }
+
     String targetId;
     final existingIndex = state.indexWhere(
       (item) =>
@@ -182,28 +193,110 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
     if (existingIndex != -1) {
       targetId = state[existingIndex].id;
     } else {
-      targetId = addQueueItem(videoInfo, selectedFormat);
+      targetId = addQueueItem(videoInfo, selectedFormat, videoUrl: videoUrl);
     }
 
+    await _executeDownload(targetId);
+  }
+
+  /// Retries a previously failed download.
+  Future<void> retryDownload(String itemId) async {
+    final targetIndex = state.indexWhere((item) => item.id == itemId);
+    if (targetIndex == -1) return;
+
+    final targetItem = state[targetIndex];
+    if (targetItem.selectedFormat == null) return;
+
+    if (requestStoragePermission != null) {
+      final isGranted = await requestStoragePermission!();
+      if (!isGranted) return;
+    }
+
+    debugPrint(
+      '[DownloadQueueNotifier] Retrying download for item $itemId (${targetItem.videoInfo.title})',
+    );
+    await _executeDownload(itemId);
+  }
+
+  /// Executes download using [DownloadExecutionService] or simulation fallback.
+  Future<void> _executeDownload(String itemId) async {
+    final targetIndex = state.indexWhere((item) => item.id == itemId);
+    if (targetIndex == -1) return;
+
+    final targetItem = state[targetIndex];
+    if (targetItem.selectedFormat == null) return;
+
+    // Transition state to downloading
     state = [
       for (final item in state)
-        if (item.id == targetId)
+        if (item.id == itemId)
           item.copyWith(
             status: QueueItemStatus.downloading,
-            progressPercent: 15.0,
+            progressPercent: 0.0,
+            clearErrorMessage: true,
           )
         else
           item,
     ];
 
-    await _advanceSimulatedProgress(targetId);
+    if (executionService == null) {
+      await _advanceSimulatedProgress(itemId);
+      return;
+    }
+
+    try {
+      final targetUrl =
+          targetItem.videoUrl ?? 'https://youtube.com/watch?v=sample';
+      final downloadedPath = await executionService!.executeDownload(
+        url: targetUrl,
+        videoInfo: targetItem.videoInfo,
+        format: targetItem.selectedFormat!,
+        onProgress: (progressPercent) {
+          state = [
+            for (final item in state)
+              if (item.id == itemId)
+                item.copyWith(progressPercent: progressPercent)
+              else
+                item,
+          ];
+        },
+      );
+
+      state = [
+        for (final item in state)
+          if (item.id == itemId)
+            item.copyWith(
+              status: QueueItemStatus.completed,
+              progressPercent: 100.0,
+              downloadedFilePath: downloadedPath,
+              clearErrorMessage: true,
+            )
+          else
+            item,
+      ];
+      debugPrint('[DownloadQueueNotifier] Download completed: $downloadedPath');
+    } catch (downloadError) {
+      debugPrint(
+        '[DownloadQueueNotifier] Download failed for item $itemId: $downloadError',
+      );
+      state = [
+        for (final item in state)
+          if (item.id == itemId)
+            item.copyWith(
+              status: QueueItemStatus.failed,
+              errorMessage:
+                  downloadError.toString().replaceFirst('Exception: ', ''),
+            )
+          else
+            item,
+      ];
+    }
   }
 
-  /// Advances progress through simulated steps over ~2 seconds before marking completed.
+  /// Advances progress through simulated steps over ~2 seconds before marking completed (dev/test fallback).
   Future<void> _advanceSimulatedProgress(String itemId) async {
     await Future.delayed(const Duration(milliseconds: 600));
 
-    // Step 2: Intermediate progress
     state = [
       for (final item in state)
         if (item.id == itemId)
@@ -216,7 +309,6 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
 
     await Future.delayed(const Duration(milliseconds: 700));
 
-    // Step 3: High progress
     state = [
       for (final item in state)
         if (item.id == itemId)
@@ -229,7 +321,6 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
 
     await Future.delayed(const Duration(milliseconds: 700));
 
-    // Step 4: Completion
     state = [
       for (final item in state)
         if (item.id == itemId)
@@ -255,5 +346,7 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
 /// Provider for [DownloadQueueNotifier].
 final downloadQueueProvider =
     StateNotifierProvider<DownloadQueueNotifier, List<QueueItem>>((ref) {
-  return DownloadQueueNotifier();
+  return DownloadQueueNotifier(
+    executionService: ref.watch(downloadExecutionServiceProvider),
+  );
 });

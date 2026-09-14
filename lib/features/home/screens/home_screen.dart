@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../clipboard_engine/clipboard_watcher.dart';
 import '../../clipboard_engine/models/clipboard_state.dart';
@@ -90,7 +91,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final activeDownloads = downloadQueue
         .where((item) =>
             item.status == QueueItemStatus.downloading ||
-            item.status == QueueItemStatus.queued)
+            item.status == QueueItemStatus.queued ||
+            item.status == QueueItemStatus.failed)
         .toList();
 
     return Scaffold(
@@ -390,17 +392,117 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         );
       case QueueItemStatus.failed:
-        return const Row(
+        return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error, size: 14, color: Colors.red),
-            SizedBox(width: 4),
-            Text(
-              'Failed',
-              style: TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
+            InkWell(
+              onTap: () => _showErrorDetailsDialog(item),
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline_rounded, size: 14, color: Colors.red),
+                    SizedBox(width: 4),
+                    Text(
+                      'Failed',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              ),
+              onPressed: () => _retryDownloadWithPermission(item.id),
+              child: const Text('Retry', style: TextStyle(fontSize: 12)),
             ),
           ],
         );
+    }
+  }
+
+  void _showErrorDetailsDialog(QueueItem item) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Download Failed'),
+        content: Text(
+          item.errorMessage ??
+              'An unknown error occurred while downloading this video.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _retryDownloadWithPermission(item.id);
+            },
+            child: const Text('Retry Download'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _retryDownloadWithPermission(String itemId) async {
+    final hasPermission = await _checkAndRequestStoragePermission();
+    if (hasPermission) {
+      ref.read(downloadQueueProvider.notifier).retryDownload(itemId);
+    }
+  }
+
+  Future<bool> _checkAndRequestStoragePermission() async {
+    try {
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
+      }
+
+      if (status.isGranted) {
+        return true;
+      }
+
+      if (mounted) {
+        await showDialog(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Storage Permission Required'),
+            content: const Text(
+              'Reel Saver requires storage access to save downloaded videos and audio to your device. Please grant permission in App Settings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  openAppSettings();
+                },
+                child: const Text('Open Settings'),
+              ),
+            ],
+          ),
+        );
+      }
+      return false;
+    } catch (_) {
+      // Fallback on platforms where permission_handler is not needed or mocked
+      return true;
     }
   }
 }

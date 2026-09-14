@@ -17,6 +17,8 @@ class QueueItem {
   final QueueItemStatus status;
   final double progressPercent;
   final String? videoUrl;
+  final String? errorMessage;
+  final String? downloadedFilePath;
 
   const QueueItem({
     required this.id,
@@ -25,6 +27,8 @@ class QueueItem {
     this.status = QueueItemStatus.queued,
     this.progressPercent = 0.0,
     this.videoUrl,
+    this.errorMessage,
+    this.downloadedFilePath,
   });
 
   QueueItem copyWith({
@@ -32,6 +36,9 @@ class QueueItem {
     QueueItemStatus? status,
     double? progressPercent,
     String? videoUrl,
+    String? errorMessage,
+    bool clearErrorMessage = false,
+    String? downloadedFilePath,
   }) {
     return QueueItem(
       id: id,
@@ -40,6 +47,8 @@ class QueueItem {
       status: status ?? this.status,
       progressPercent: progressPercent ?? this.progressPercent,
       videoUrl: videoUrl ?? this.videoUrl,
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      downloadedFilePath: downloadedFilePath ?? this.downloadedFilePath,
     );
   }
 
@@ -52,7 +61,9 @@ class QueueItem {
         other.selectedFormat == selectedFormat &&
         other.status == status &&
         other.progressPercent == progressPercent &&
-        other.videoUrl == videoUrl;
+        other.videoUrl == videoUrl &&
+        other.errorMessage == errorMessage &&
+        other.downloadedFilePath == downloadedFilePath;
   }
 
   @override
@@ -63,9 +74,11 @@ class QueueItem {
         status,
         progressPercent,
         videoUrl,
+        errorMessage,
+        downloadedFilePath,
       );
 
   @override
   String toString() =>
-      'QueueItem(id: $id, title: ${videoInfo.title}, format: ${selectedFormat?.label ?? "none"}, status: $status, progress: $progressPercent%, url: $videoUrl)';
+      'QueueItem(id: $id, title: ${videoInfo.title}, format: ${selectedFormat?.label ?? "none"}, status: $status, progress: $progressPercent%, url: $videoUrl, error: $errorMessage, file: $downloadedFilePath)';
 }

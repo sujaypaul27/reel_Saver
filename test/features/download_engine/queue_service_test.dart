@@ -1,8 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reel_saver/features/download_engine/download_execution_service.dart';
 import 'package:reel_saver/features/download_engine/models/queue_item.dart';
 import 'package:reel_saver/features/download_engine/models/video_format.dart';
 import 'package:reel_saver/features/download_engine/models/video_info.dart';
 import 'package:reel_saver/features/download_engine/queue_service.dart';
+import 'package:reel_saver/features/history/history_service.dart';
 
 void main() {
   const sampleVideo = VideoInfo(
@@ -158,5 +160,81 @@ void main() {
       expect(upgradedId, equals(sharedId));
       expect(queueNotifier.state.first.selectedFormat?.label, equals('1080p'));
     });
+
+    test('handles download execution failure and updates item status and errorMessage', () async {
+      final failingExecutionService = _FailingExecutionService();
+      final failingNotifier = DownloadQueueNotifier(
+        executionService: failingExecutionService,
+      );
+
+      final id = failingNotifier.addQueueItem(sampleVideo, format1080);
+      await failingNotifier.startQueuedDownloads();
+
+      expect(failingNotifier.state.length, equals(1));
+      final failedItem = failingNotifier.state.first;
+      expect(failedItem.id, equals(id));
+      expect(failedItem.status, equals(QueueItemStatus.failed));
+      expect(failedItem.errorMessage, contains('Simulated download network error'));
+    });
+
+    test('retryDownload re-triggers execution for a failed item', () async {
+      final mockExecutionService = _TogglingExecutionService();
+      final retryNotifier = DownloadQueueNotifier(
+        executionService: mockExecutionService,
+      );
+
+      final id = retryNotifier.addQueueItem(sampleVideo, format1080);
+      // First attempt fails
+      await retryNotifier.startQueuedDownloads();
+      expect(retryNotifier.state.first.status, equals(QueueItemStatus.failed));
+
+      // Retry attempt succeeds
+      await retryNotifier.retryDownload(id);
+      expect(retryNotifier.state.first.status, equals(QueueItemStatus.completed));
+      expect(retryNotifier.state.first.progressPercent, equals(100.0));
+      expect(retryNotifier.state.first.errorMessage, isNull);
+    });
   });
 }
+
+class _FailingExecutionService extends DownloadExecutionService {
+  _FailingExecutionService()
+      : super(
+          historyService: HistoryService(customHistoryFile: null),
+        );
+
+  @override
+  Future<String> executeDownload({
+    required String url,
+    required VideoInfo videoInfo,
+    required VideoFormat format,
+    required void Function(double progressPercent) onProgress,
+  }) async {
+    throw Exception('Simulated download network error');
+  }
+}
+
+class _TogglingExecutionService extends DownloadExecutionService {
+  bool shouldFail = true;
+
+  _TogglingExecutionService()
+      : super(
+          historyService: HistoryService(customHistoryFile: null),
+        );
+
+  @override
+  Future<String> executeDownload({
+    required String url,
+    required VideoInfo videoInfo,
+    required VideoFormat format,
+    required void Function(double progressPercent) onProgress,
+  }) async {
+    if (shouldFail) {
+      shouldFail = false;
+      throw Exception('Initial attempt failed');
+    }
+    onProgress(100.0);
+    return '/storage/sample.mp4';
+  }
+}
+
