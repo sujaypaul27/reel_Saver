@@ -25,6 +25,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navSettings => 'Settings';
 
   @override
+  String get navDownloads => 'Downloads';
+
+  @override
+  String get startDownloadsButton => 'Download All';
+
+  @override
   String get menuTooltip => 'Menu';
 
   @override

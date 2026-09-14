@@ -134,6 +134,18 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get navSettings;
 
+  /// Navigation link label for Downloads Queue screen
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get navDownloads;
+
+  /// Button to start downloading all queued items
+  ///
+  /// In en, this message translates to:
+  /// **'Download All'**
+  String get startDownloadsButton;
+
   /// Tooltip for drawer menu icon
   ///
   /// In en, this message translates to:

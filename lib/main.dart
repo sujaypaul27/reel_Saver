@@ -10,6 +10,7 @@ import 'features/download_engine/queue_storage_service.dart';
 import 'features/history/history_screen.dart';
 import 'features/home/screens/fetching_details_screen.dart';
 import 'features/home/screens/home_screen.dart';
+import 'features/queue/screens/queue_screen.dart';
 import 'features/settings/providers/locale_provider.dart';
 import 'features/settings/settings_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -69,6 +70,14 @@ final appRouter = GoRouter(
         child: FetchingDetailsScreen(
           videoUrl: state.extra as String?,
         ),
+      ),
+    ),
+    GoRoute(
+      path: '/queue',
+      pageBuilder: (context, state) => buildFadeSlideTransitionPage(
+        context: context,
+        state: state,
+        child: const QueueScreen(),
       ),
     ),
     GoRoute(

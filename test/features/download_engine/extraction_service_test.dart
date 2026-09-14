@@ -144,14 +144,17 @@ void main() {
       expect(formats[4].type, equals(FormatType.audioOnly));
     });
 
-    test('fallback returns varied realistic mock data (144p to 4K + audio)', () async {
-      final result = await service.fetchDetails('https://youtube.com/watch?v=sample');
-
-      expect(result.formats.length, greaterThanOrEqualTo(8));
-      expect(result.formats.any((f) => f.label == '4K'), isTrue);
-      expect(result.formats.any((f) => f.label == '1080p'), isTrue);
-      expect(result.formats.any((f) => f.label == '144p'), isTrue);
-      expect(result.formats.any((f) => f.type == FormatType.audioOnly), isTrue);
+    test('throws descriptive exception when URL is invalid or unavailable', () async {
+      expect(
+        () => service.fetchDetails('https://youtube.com/watch?v=nonexistent_invalid_url_12345'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Could not fetch video details'),
+          ),
+        ),
+      );
     });
   });
 }

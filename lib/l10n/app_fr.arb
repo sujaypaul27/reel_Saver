@@ -5,6 +5,8 @@
   "navHome": "Accueil",
   "navHistory": "Historique des téléchargements",
   "navSettings": "Paramètres",
+  "navDownloads": "Téléchargements",
+  "startDownloadsButton": "Tout télécharger",
   "menuTooltip": "Menu",
   "clearTooltip": "Effacer",
   "autoDetectionTitle": "Détection automatique",

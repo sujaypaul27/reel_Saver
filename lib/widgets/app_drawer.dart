@@ -64,6 +64,20 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
+            leading: const Icon(Icons.download_rounded),
+            title: Text(
+              l10n.navDownloads,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            selected: currentRoutePath == '/queue',
+            onTap: () {
+              Navigator.of(context).pop();
+              if (currentRoutePath != '/queue') {
+                context.push('/queue');
+              }
+            },
+          ),
+          ListTile(
             leading: const Icon(Icons.history_rounded),
             title: Text(
               l10n.navHistory,

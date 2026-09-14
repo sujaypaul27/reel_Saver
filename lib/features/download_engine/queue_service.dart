@@ -181,6 +181,12 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
     );
   }
 
+  /// Removes any queue item by its unique ID.
+  void removeQueueItemById(String itemId) {
+    state = state.where((item) => item.id != itemId).toList();
+    debugPrint('[DownloadQueueNotifier] Removed item by id: $itemId');
+  }
+
   /// Checks whether a specific format of a video is currently queued.
   bool isFormatQueued(VideoInfo videoInfo, VideoFormat selectedFormat) {
     return state.any(

@@ -25,6 +25,12 @@ class AppLocalizationsTa extends AppLocalizations {
   String get navSettings => 'அமைப்புகள்';
 
   @override
+  String get navDownloads => 'பதிவிறக்கங்கள்';
+
+  @override
+  String get startDownloadsButton => 'அனைத்தையும் பதிவிறக்குக';
+
+  @override
   String get menuTooltip => 'மெனு';
 
   @override

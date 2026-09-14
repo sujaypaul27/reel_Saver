@@ -5,6 +5,8 @@
   "navHome": "होम",
   "navHistory": "डाउनलोड इतिहास",
   "navSettings": "सेटिंग्स",
+  "navDownloads": "डाउनलोड्स",
+  "startDownloadsButton": "सभी डाउनलोड करें",
   "menuTooltip": "मेनू",
   "clearTooltip": "साफ़ करें",
   "autoDetectionTitle": "स्वचालित पहचान",

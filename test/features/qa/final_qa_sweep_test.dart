@@ -50,6 +50,13 @@ class MixedDownloadProcessRunner implements DownloadProcessRunner {
       onErrorLine('Traceback (most recent call last):');
       onErrorLine('  File "yt_dlp/extractor/youtube.py", line 400');
     } else {
+      final oIndex = arguments.indexOf('-o');
+      if (oIndex != -1 && oIndex + 1 < arguments.length) {
+        final filePath = arguments[oIndex + 1];
+        final file = File(filePath);
+        await file.create(recursive: true);
+        await file.writeAsString('Mock media stream data content');
+      }
       onProgress(100.0);
     }
     return exitCode;
@@ -243,6 +250,7 @@ void main() {
       final executionService = DownloadExecutionService(
         historyService: historyService,
         customDownloadsDirectory: downloadsDirectory,
+        processRunner: const MixedDownloadProcessRunner({}),
       );
 
       const format = VideoFormat(

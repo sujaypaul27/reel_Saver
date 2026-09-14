@@ -25,6 +25,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get navSettings => 'सेटिंग्स';
 
   @override
+  String get navDownloads => 'डाउनलोड्स';
+
+  @override
+  String get startDownloadsButton => 'सभी डाउनलोड करें';
+
+  @override
   String get menuTooltip => 'मेनू';
 
   @override

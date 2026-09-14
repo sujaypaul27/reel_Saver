@@ -32,6 +32,12 @@ class VideoFormat {
   /// Approximate bitrate in kbps, used for audio stream sorting.
   final int? bitrate;
 
+  /// Direct streaming or media download URL, if resolved during extraction.
+  final String? downloadUrl;
+
+  /// Internal format or stream tag / ID (e.g. itag).
+  final String? tag;
+
   const VideoFormat({
     required this.label,
     required this.type,
@@ -39,6 +45,8 @@ class VideoFormat {
     this.estimatedSizeMB,
     this.height,
     this.bitrate,
+    this.downloadUrl,
+    this.tag,
   });
 
   Map<String, dynamic> toJson() {
@@ -49,6 +57,8 @@ class VideoFormat {
       if (estimatedSizeMB != null) 'estimatedSizeMB': estimatedSizeMB,
       if (height != null) 'height': height,
       if (bitrate != null) 'bitrate': bitrate,
+      if (downloadUrl != null) 'downloadUrl': downloadUrl,
+      if (tag != null) 'tag': tag,
     };
   }
 
@@ -60,6 +70,8 @@ class VideoFormat {
       estimatedSizeMB: (json['estimatedSizeMB'] as num?)?.toDouble(),
       height: json['height'] as int?,
       bitrate: json['bitrate'] as int?,
+      downloadUrl: json['downloadUrl'] as String?,
+      tag: json['tag'] as String?,
     );
   }
 

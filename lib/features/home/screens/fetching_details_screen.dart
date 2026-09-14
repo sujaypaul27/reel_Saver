@@ -325,7 +325,11 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
                                 if (checked == true) {
                                   ref
                                       .read(downloadQueueProvider.notifier)
-                                      .addQueueItem(videoInfo, format);
+                                      .addQueueItem(
+                                        videoInfo,
+                                        format,
+                                        videoUrl: widget.videoUrl,
+                                      );
                                 } else {
                                   ref
                                       .read(downloadQueueProvider.notifier)
@@ -352,7 +356,11 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
                                 onPressed: () {
                                   ref
                                       .read(downloadQueueProvider.notifier)
-                                      .startSingleDownload(videoInfo, format);
+                                      .startSingleDownload(
+                                        videoInfo,
+                                        format,
+                                        videoUrl: widget.videoUrl,
+                                      );
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(l10n

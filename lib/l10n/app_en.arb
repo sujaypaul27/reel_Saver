@@ -20,6 +20,14 @@
   "@navSettings": {
     "description": "Navigation link label for Settings screen"
   },
+  "navDownloads": "Downloads",
+  "@navDownloads": {
+    "description": "Navigation link label for Downloads Queue screen"
+  },
+  "startDownloadsButton": "Download All",
+  "@startDownloadsButton": {
+    "description": "Button to start downloading all queued items"
+  },
   "menuTooltip": "Menu",
   "@menuTooltip": {
     "description": "Tooltip for drawer menu icon"

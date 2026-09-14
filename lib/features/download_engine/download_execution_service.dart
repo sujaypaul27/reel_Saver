@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:media_scanner/media_scanner.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../history/history_service.dart';
@@ -61,19 +64,22 @@ class DefaultDownloadProcessRunner implements DownloadProcessRunner {
   }
 }
 
-/// Service responsible for managing yt-dlp download execution, output file routing,
-/// real-time progress parsing, and history record persistence.
+/// Service responsible for managing video download execution, direct stream piping,
+/// yt-dlp process routing, real-time progress parsing, Android MediaStore registration,
+/// and history record persistence.
 class DownloadExecutionService {
   final HistoryService historyService;
   final DownloadProcessRunner processRunner;
   final String? ytDlpBinaryPath;
   final Directory? customDownloadsDirectory;
+  final http.Client? httpClient;
 
   const DownloadExecutionService({
     required this.historyService,
     this.processRunner = const DefaultDownloadProcessRunner(),
     this.ytDlpBinaryPath,
     this.customDownloadsDirectory,
+    this.httpClient,
   });
 
   /// Resolves or creates the destination directory: ReelSaver/Downloads.
@@ -143,7 +149,8 @@ class DownloadExecutionService {
     return arguments;
   }
 
-  /// Executes download for a given format and URL, updating progress and saving to History.
+  /// Executes download for a given format and URL, streaming actual media bytes,
+  /// updating progress, registering with MediaStore, and saving to History.
   Future<String> executeDownload({
     required String url,
     required VideoInfo videoInfo,
@@ -163,45 +170,65 @@ class DownloadExecutionService {
       collisionIndex++;
     }
 
-    final binaryPath = ytDlpBinaryPath ?? await _locateBundledYtDlp();
-
-    if (binaryPath != null && await File(binaryPath).exists()) {
-      final arguments = buildYtDlpArguments(
-        url: url,
-        format: format,
-        destinationFilePath: destinationPath,
-      );
-
-      final errorLines = <String>[];
-      final exitCode = await processRunner.runDownloadProcess(
-        executable: binaryPath,
-        arguments: arguments,
+    // 1. Direct stream download if format has direct downloadUrl (e.g. from YouTubeExplode or Instagram)
+    if (format.downloadUrl != null && format.downloadUrl!.isNotEmpty) {
+      await _downloadFromDirectUrl(
+        downloadUrl: format.downloadUrl!,
+        destinationPath: destinationPath,
+        estimatedSizeMB: format.estimatedSizeMB,
         onProgress: onProgress,
-        onErrorLine: (err) => errorLines.add(err),
       );
-
-      if (exitCode != 0) {
-        final message = errorLines.isNotEmpty
-            ? errorLines.join('\n')
-            : 'Download process failed with exit code $exitCode';
-        throw Exception(message);
-      }
     } else {
-      // Binary fallback when yt-dlp is not bundled in dev/test environment
-      await _simulateDownload(onProgress);
-      final file = File(destinationPath);
-      if (!await file.exists()) {
-        await file.writeAsString('Downloaded media content');
+      // 2. yt-dlp binary execution
+      final binaryPath = ytDlpBinaryPath ?? await _locateBundledYtDlp();
+      final hasCustomRunner = processRunner is! DefaultDownloadProcessRunner;
+
+      if (hasCustomRunner || (binaryPath != null && await File(binaryPath).exists())) {
+        final arguments = buildYtDlpArguments(
+          url: url,
+          format: format,
+          destinationFilePath: destinationPath,
+        );
+
+        final errorLines = <String>[];
+        final exitCode = await processRunner.runDownloadProcess(
+          executable: binaryPath ?? 'yt-dlp',
+          arguments: arguments,
+          onProgress: onProgress,
+          onErrorLine: (err) => errorLines.add(err),
+        );
+
+        if (exitCode != 0) {
+          final message = errorLines.isNotEmpty
+              ? errorLines.join('\n')
+              : 'Download process failed with exit code $exitCode';
+          throw Exception(message);
+        }
+      } else {
+        throw Exception(
+          'Cannot download media: yt-dlp binary is missing and no direct stream URL is available.',
+        );
       }
+    }
+
+    // Verify downloaded file is valid on disk
+    final downloadedFile = File(destinationPath);
+    if (!await downloadedFile.exists() || await downloadedFile.length() == 0) {
+      throw Exception('Downloaded file is empty or missing at $destinationPath');
+    }
+
+    // Register with Android MediaStore so file appears in phone's Gallery
+    try {
+      await MediaScanner.loadMedia(path: destinationPath);
+      debugPrint('[DownloadExecutionService] Registered with MediaStore: $destinationPath');
+    } catch (scannerError) {
+      debugPrint('[DownloadExecutionService] MediaScanner skipped or unavailable: $scannerError');
     }
 
     // Determine final file size
     double fileSizeMB = format.estimatedSizeMB ?? 0.0;
     try {
-      final file = File(destinationPath);
-      if (await file.exists()) {
-        fileSizeMB = (await file.length()) / (1024 * 1024);
-      }
+      fileSizeMB = (await downloadedFile.length()) / (1024 * 1024);
     } catch (_) {}
 
     // Record entry to History store
@@ -219,16 +246,65 @@ class DownloadExecutionService {
     return destinationPath;
   }
 
-  Future<void> _simulateDownload(
-    void Function(double progressPercent) onProgress,
-  ) async {
-    onProgress(15.0);
-    await Future.delayed(const Duration(milliseconds: 300));
-    onProgress(50.0);
-    await Future.delayed(const Duration(milliseconds: 300));
-    onProgress(85.0);
-    await Future.delayed(const Duration(milliseconds: 300));
-    onProgress(100.0);
+  /// Streams direct media bytes from URL with real-time progress calculation.
+  Future<void> _downloadFromDirectUrl({
+    required String downloadUrl,
+    required String destinationPath,
+    required double? estimatedSizeMB,
+    required void Function(double progressPercent) onProgress,
+  }) async {
+    final client = httpClient ?? http.Client();
+    IOSink? sink;
+    try {
+      final request = http.Request('GET', Uri.parse(downloadUrl));
+      request.headers['User-Agent'] =
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+      final response = await client.send(request);
+      if (response.statusCode >= 400) {
+        throw Exception(
+          'Server returned HTTP ${response.statusCode} while downloading video stream.',
+        );
+      }
+
+      final totalBytes = response.contentLength ??
+          (estimatedSizeMB != null ? (estimatedSizeMB * 1024 * 1024).round() : 0);
+
+      final file = File(destinationPath);
+      sink = file.openWrite();
+
+      int receivedBytes = 0;
+      await response.stream.listen((chunk) {
+        sink?.add(chunk);
+        receivedBytes += chunk.length;
+        if (totalBytes > 0) {
+          final progress = (receivedBytes / totalBytes) * 100.0;
+          onProgress(progress.clamp(0.0, 100.0));
+        }
+      }).asFuture();
+
+      await sink.flush();
+      await sink.close();
+      sink = null;
+      onProgress(100.0);
+    } catch (e) {
+      if (sink != null) {
+        try {
+          await sink.close();
+        } catch (_) {}
+      }
+      final file = File(destinationPath);
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+      rethrow;
+    } finally {
+      if (httpClient == null) {
+        client.close();
+      }
+    }
   }
 
   Future<String?> _locateBundledYtDlp() async {

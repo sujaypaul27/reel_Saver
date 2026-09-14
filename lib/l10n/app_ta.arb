@@ -5,6 +5,8 @@
   "navHome": "முகப்பு",
   "navHistory": "பதிவிறக்க வரலாறு",
   "navSettings": "அமைப்புகள்",
+  "navDownloads": "பதிவிறக்கங்கள்",
+  "startDownloadsButton": "அனைத்தையும் பதிவிறக்குக",
   "menuTooltip": "மெனு",
   "clearTooltip": "அழி",
   "autoDetectionTitle": "தானியங்கி கண்டறிதல்",
