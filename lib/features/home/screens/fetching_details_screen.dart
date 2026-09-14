@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../download_engine/extraction_service.dart';
-import '../../download_engine/models/video_format.dart';
+import '../../download_engine/models/queue_item.dart';
 import '../../download_engine/models/video_info.dart';
+import '../../download_engine/queue_service.dart';
 
 enum FetchStatus {
   loading,
@@ -31,7 +32,6 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
   Animation<double>? _progressAnimation;
 
   VideoInfo? _videoInfo;
-  final Set<VideoFormat> _selectedFormats = <VideoFormat>{};
 
   @override
   void initState() {
@@ -41,7 +41,6 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
 
   void _initAndStartExtraction() {
     _status = FetchStatus.loading;
-    _selectedFormats.clear();
 
     _animationController?.dispose();
     _animationController = AnimationController(
@@ -281,75 +280,118 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
 
         // Scrollable vertical list of format options
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            itemCount: videoInfo.formats.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, indent: 64),
-            itemBuilder: (context, index) {
-              final format = videoInfo.formats[index];
-              final isChecked = _selectedFormats.contains(format);
+          child: Builder(
+            builder: (context) {
+              final queue = ref.watch(downloadQueueProvider);
+              final queuedFormatsForThisVideo = queue
+                  .where((item) =>
+                      item.videoInfo.title == videoInfo.title &&
+                      item.status == QueueItemStatus.queued)
+                  .toList();
 
-              return CheckboxListTile(
-                controlAffinity: ListTileControlAffinity.leading,
-                value: isChecked,
-                onChanged: (bool? checked) {
-                  setState(() {
-                    if (checked == true) {
-                      _selectedFormats.add(format);
-                    } else {
-                      _selectedFormats.remove(format);
-                    }
-                  });
-                },
-                title: Text(
-                  format.formattedDisplayLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                subtitle: format.formattedEstimatedSize != null
-                    ? Text(
-                        format.formattedEstimatedSize!,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                      )
-                    : null,
-                secondary: IconButton(
-                  icon: const Icon(Icons.download_rounded),
-                  tooltip: 'Download ${format.label}',
-                  onPressed: () {
-                    // Stub for single download (to be integrated in Phase 5)
-                    debugPrint('Direct single download initiated for: ${format.label}');
-                  },
-                ),
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      itemCount: videoInfo.formats.length,
+                      separatorBuilder: (context, index) =>
+                          const Divider(height: 1, indent: 64),
+                      itemBuilder: (context, index) {
+                        final format = videoInfo.formats[index];
+                        final isChecked = queuedFormatsForThisVideo
+                            .any((item) => item.selectedFormat == format);
+
+                        return CheckboxListTile(
+                          controlAffinity: ListTileControlAffinity.leading,
+                          value: isChecked,
+                          onChanged: (bool? checked) {
+                            if (checked == true) {
+                              ref
+                                  .read(downloadQueueProvider.notifier)
+                                  .addQueueItem(videoInfo, format);
+                            } else {
+                              ref
+                                  .read(downloadQueueProvider.notifier)
+                                  .removeQueueItem(videoInfo, format);
+                            }
+                          },
+                          title: Text(
+                            format.formattedDisplayLabel,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: format.formattedEstimatedSize != null
+                              ? Text(
+                                  format.formattedEstimatedSize!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                )
+                              : null,
+                          secondary: IconButton(
+                            icon: const Icon(Icons.download_rounded),
+                            tooltip: 'Download ${format.label}',
+                            onPressed: () {
+                              ref
+                                  .read(downloadQueueProvider.notifier)
+                                  .startSingleDownload(videoInfo, format);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Downloading ${format.label}...'),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Bottom action bar: Download Selected
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: queuedFormatsForThisVideo.isEmpty
+                            ? null
+                            : () {
+                                final count = queuedFormatsForThisVideo.length;
+                                ref
+                                    .read(downloadQueueProvider.notifier)
+                                    .startQueuedDownloads();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Started downloading $count format(s)...'),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                        child: Text(
+                          queuedFormatsForThisVideo.isEmpty
+                              ? 'Download Selected'
+                              : 'Download Selected (${queuedFormatsForThisVideo.length})',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
-          ),
-        ),
-
-        // Bottom action bar: Download Selected
-        Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            border: Border(top: BorderSide(color: Colors.grey.shade300)),
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _selectedFormats.isEmpty
-                  ? null
-                  : () {
-                      // Stub for batch download (to be integrated in Phase 5)
-                      debugPrint(
-                        'Batch download initiated for ${_selectedFormats.length} formats.',
-                      );
-                    },
-              child: Text(
-                _selectedFormats.isEmpty
-                    ? 'Download Selected'
-                    : 'Download Selected (${_selectedFormats.length})',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
           ),
         ),
       ],

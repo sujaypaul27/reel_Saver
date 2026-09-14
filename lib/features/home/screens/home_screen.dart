@@ -6,6 +6,8 @@ import '../../clipboard_engine/clipboard_watcher.dart';
 import '../../clipboard_engine/models/clipboard_state.dart';
 import '../../clipboard_engine/models/clipboard_status.dart';
 import '../../clipboard_engine/models/url_type.dart';
+import '../../download_engine/models/queue_item.dart';
+import '../../download_engine/queue_service.dart';
 import '../providers/auto_mode_provider.dart';
 
 /// Main home screen allowing users to toggle between automatic clipboard detection
@@ -84,6 +86,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     });
 
+    final downloadQueue = ref.watch(downloadQueueProvider);
+    final activeDownloads = downloadQueue
+        .where((item) =>
+            item.status == QueueItemStatus.downloading ||
+            item.status == QueueItemStatus.queued)
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -95,6 +104,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         title: const Text('Reel Saver'),
       ),
+      bottomSheet: activeDownloads.isEmpty
+          ? null
+          : Material(
+              elevation: 8,
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: InkWell(
+                onTap: () => _openQueueProgressBottomSheet(context),
+                child: SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.downloading_rounded),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            '${activeDownloads.length} download${activeDownloads.length == 1 ? '' : 's'} in progress',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.keyboard_arrow_up_rounded),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -178,5 +217,156 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _openQueueProgressBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (bottomSheetContext) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final queue = ref.watch(downloadQueueProvider);
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.5,
+              minChildSize: 0.3,
+              maxChildSize: 0.85,
+              expand: false,
+              builder: (context, scrollController) {
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade400,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Download Queue',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              ref.read(downloadQueueProvider.notifier).clearCompleted();
+                            },
+                            child: const Text('Clear Completed'),
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      if (queue.isEmpty)
+                        const Expanded(
+                          child: Center(
+                            child: Text('No items in download queue.'),
+                          ),
+                        )
+                      else
+                        Expanded(
+                          child: ListView.separated(
+                            controller: scrollController,
+                            itemCount: queue.length,
+                            separatorBuilder: (_, __) => const Divider(),
+                            itemBuilder: (context, index) {
+                              final item = queue[index];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.videoInfo.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '${item.selectedFormat.label} (${item.selectedFormat.typeDescription})',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                        const Spacer(),
+                                        _buildQueueStatusIndicator(item),
+                                      ],
+                                    ),
+                                    if (item.status == QueueItemStatus.downloading) ...[
+                                      const SizedBox(height: 6),
+                                      LinearProgressIndicator(
+                                        value: item.progressPercent / 100,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildQueueStatusIndicator(QueueItem item) {
+    switch (item.status) {
+      case QueueItemStatus.queued:
+        return const Text(
+          'Queued',
+          style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
+        );
+      case QueueItemStatus.downloading:
+        return Text(
+          '${item.progressPercent.toInt()}%',
+          style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
+        );
+      case QueueItemStatus.completed:
+        return const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, size: 14, color: Colors.green),
+            SizedBox(width: 4),
+            Text(
+              'Completed',
+              style: TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
+            ),
+          ],
+        );
+      case QueueItemStatus.failed:
+        return const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error, size: 14, color: Colors.red),
+            SizedBox(width: 4),
+            Text(
+              'Failed',
+              style: TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ],
+        );
+    }
   }
 }

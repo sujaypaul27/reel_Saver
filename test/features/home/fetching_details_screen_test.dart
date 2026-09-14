@@ -110,6 +110,7 @@ void main() {
       // Tap single download icon
       await tester.tap(find.byIcon(Icons.download_rounded).first);
       await tester.pump();
+      await tester.pump(const Duration(seconds: 3));
     });
 
     testWidgets('shows error state with Retry button when extraction fails', (tester) async {
