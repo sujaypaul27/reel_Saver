@@ -59,11 +59,25 @@ class ExtractionService {
     return lower.contains('instagram.com') || lower.contains('instagr.am');
   }
 
+  /// Normalizes YouTube video URLs by extracting the video ID and forming
+  /// a clean watch URL, stripping problematic query parameters (like `?si=...`
+  /// or `?feature=...` which cause YoutubeExplode parser failures on shorts).
+  String _normalizeYouTubeUrl(String url) {
+    final match = RegExp(
+      r'(?:v=|\/shorts\/|\/embed\/|\/v\/|\/live\/|youtu\.be\/)([a-zA-Z0-9_-]{11})',
+    ).firstMatch(url);
+    if (match != null && match.group(1) != null) {
+      return 'https://www.youtube.com/watch?v=${match.group(1)}';
+    }
+    return url;
+  }
+
   /// Extracts YouTube details using [YoutubeExplode].
   Future<VideoInfo> _fetchYouTubeDetails(String url) async {
     final yt = youtubeExplodeClient ?? YoutubeExplode();
+    final normalizedUrl = _normalizeYouTubeUrl(url);
     try {
-      final video = await yt.videos.get(url);
+      final video = await yt.videos.get(normalizedUrl);
       final manifest = await yt.videos.streamsClient.getManifest(video.id);
 
       final extractedFormats = <VideoFormat>[];
@@ -136,13 +150,24 @@ class ExtractionService {
         durationSeconds: video.duration?.inSeconds ?? 0,
         formats: deduplicatedFormats,
       );
-    } catch (ytError) {
-      debugPrint('[ExtractionService] YoutubeExplode error: $ytError. Trying yt-dlp fallback...');
+    } catch (ytError, ytStack) {
+      debugPrint('[ExtractionService] YoutubeExplode error (${ytError.runtimeType}): $ytError');
+      if (kDebugMode) {
+        debugPrint('[ExtractionService] YoutubeExplode stackTrace: $ytStack');
+      }
       try {
+        debugPrint('[ExtractionService] Attempting yt-dlp fallback for: $url');
         return await _fetchViaYtDlp(url);
-      } catch (_) {
+      } catch (fallbackError) {
+        debugPrint('[ExtractionService] yt-dlp fallback also failed: $fallbackError');
+        if (ytError is RequestLimitExceededException) {
+          throw Exception(
+            'Could not fetch video details: YouTube blocked this request with bot detection / rate limiting. '
+            'Please wait a while or try from another network.',
+          );
+        }
         throw Exception(
-          'Could not fetch video details. The video may be private, removed, or unavailable.',
+          'Could not fetch video details: $ytError',
         );
       }
     } finally {
@@ -166,8 +191,12 @@ class ExtractionService {
     final cookieHeader = await sessionService?.getCookieHeader();
     final hasSession = cookieHeader != null && cookieHeader.isNotEmpty;
 
+    debugPrint('[ExtractionService] Fetching Instagram shortcode: $shortcode (Has Session: $hasSession)');
+
     final client = httpClient ?? http.Client();
     bool encounteredLoginWall = false;
+    int? lastStatusCode;
+    String? lastErrorSnippet;
 
     try {
       final candidates = [
@@ -188,9 +217,18 @@ class ExtractionService {
 
       for (final candidateUrl in candidates) {
         try {
+          debugPrint('[ExtractionService] Requesting Instagram endpoint: $candidateUrl');
           final response = await client.get(
             Uri.parse(candidateUrl),
             headers: headers,
+          );
+
+          lastStatusCode = response.statusCode;
+          final preview = response.body.length > 200
+              ? response.body.substring(0, 200).replaceAll('\n', ' ')
+              : response.body;
+          debugPrint(
+            '[ExtractionService] Response code: ${response.statusCode}, Length: ${response.body.length} bytes, Preview: $preview',
           );
 
           if (response.statusCode == 200 &&
@@ -204,12 +242,19 @@ class ExtractionService {
               }
             }
           } else if (response.statusCode == 401 ||
+              response.statusCode == 403 ||
               response.body.contains('accounts/login') ||
-              response.body.startsWith('<!DOCTYPE html>')) {
+              response.body.contains('checkpoint_required')) {
+            debugPrint('[ExtractionService] Instagram authentication required or session rejected (HTTP ${response.statusCode})');
             encounteredLoginWall = true;
+          } else {
+            lastErrorSnippet = 'HTTP ${response.statusCode}: $preview';
           }
-        } catch (e) {
-          debugPrint('[ExtractionService] Instagram candidate failed: $e');
+        } catch (e, stack) {
+          debugPrint('[ExtractionService] Instagram candidate request failed: $e');
+          if (kDebugMode) {
+            debugPrint('[ExtractionService] Stack trace: $stack');
+          }
         }
       }
     } finally {
@@ -231,7 +276,8 @@ class ExtractionService {
     }
 
     throw Exception(
-      'Could not fetch Instagram video details. The reel may be private, removed, or unavailable.',
+      'Could not fetch Instagram video details (${lastStatusCode != null ? "HTTP $lastStatusCode" : "Network error"}). '
+      '${lastErrorSnippet ?? "The reel may be private, removed, or the endpoint was blocked."}',
     );
   }
 
@@ -306,11 +352,12 @@ class ExtractionService {
   /// Executes yt-dlp process to extract metadata as JSON.
   Future<VideoInfo> _fetchViaYtDlp(String url) async {
     final binaryPath = ytDlpBinaryPath ?? await _locateBundledYtDlp();
+    final targetUrl = _isYouTubeUrl(url) ? _normalizeYouTubeUrl(url) : url;
 
     if (binaryPath != null && await File(binaryPath).exists()) {
       final processResult = await Process.run(
         binaryPath,
-        ['--dump-json', '--no-warnings', url],
+        ['--dump-json', '--no-warnings', targetUrl],
       );
 
       if (processResult.exitCode == 0) {
@@ -324,7 +371,9 @@ class ExtractionService {
         final stderrOutput = processResult.stderr.toString().trim();
         debugPrint('[ExtractionService] yt-dlp failed: $stderrOutput');
         throw Exception(
-          'Could not fetch video details. The video may be private, removed, or unavailable.',
+          stderrOutput.isNotEmpty
+              ? 'Could not fetch video details: $stderrOutput'
+              : 'Could not fetch video details. The video may be private, removed, or unavailable.',
         );
       }
     }

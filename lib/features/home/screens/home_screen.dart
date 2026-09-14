@@ -189,6 +189,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: _urlTextController,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textCapitalization: TextCapitalization.none,
                   decoration: InputDecoration(
                     labelText: l10n.urlInputLabel,
                     hintText: l10n.urlInputHint,
