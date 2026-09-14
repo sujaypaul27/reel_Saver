@@ -45,6 +45,12 @@ class ClipboardWatcher extends StateNotifier<ClipboardState>
     _lastInspectedClipboardText = null;
   }
 
+  /// Updates state directly, intended for testing state transitions.
+  @visibleForTesting
+  void updateState(ClipboardState newState) {
+    state = newState;
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
