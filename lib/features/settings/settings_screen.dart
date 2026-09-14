@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../download_engine/download_execution_service.dart';
 import '../history/history_service.dart';
 import '../home/providers/auto_mode_provider.dart';
@@ -164,6 +166,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isAutomaticDetectionEnabled = ref.watch(autoModeProvider);
     final activeLocale = ref.watch(localeProvider);
+    final activeThemeMode = ref.watch(themeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -172,6 +175,118 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
+          Text(
+            'Appearance',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: AppThemeMode.values.map((themeMode) {
+              final isSelected = themeMode == activeThemeMode;
+              final previewTheme = AppThemes.getThemeData(themeMode);
+
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      ref
+                          .read(themeProvider.notifier)
+                          .setThemeMode(themeMode);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: previewTheme.cardColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.outlineVariant,
+                          width: isSelected ? 2.0 : 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black
+                                .withValues(alpha: isSelected ? 0.2 : 0.06),
+                            blurRadius: isSelected ? 6 : 3,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 14,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: previewTheme.colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Container(
+                                width: 14,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: previewTheme.colorScheme.secondary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Container(
+                                width: 14,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: previewTheme.scaffoldBackgroundColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.grey.withValues(alpha: 0.5),
+                                    width: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            themeMode.displayName,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: previewTheme.colorScheme.onSurface,
+                            ),
+                          ),
+                          if (isSelected) ...[
+                            const SizedBox(height: 4),
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
           Text(
             'Preferences',
             style: TextStyle(

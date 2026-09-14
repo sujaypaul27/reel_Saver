@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/circular_percentage_indicator.dart';
 import '../../download_engine/extraction_service.dart';
 import '../../download_engine/models/queue_item.dart';
 import '../../download_engine/models/video_info.dart';
@@ -122,33 +123,16 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
 
   /// 1. Loading view with progress percentage animation
   Widget _buildLoadingView() {
-    final progressPercentage = ((_progressAnimation?.value ?? 0.0) * 100).toInt();
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(
-              width: 96,
-              height: 96,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    value: _progressAnimation?.value,
-                    strokeWidth: 6,
-                  ),
-                  Text(
-                    '$progressPercentage%',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
+            CircularPercentageIndicator(
+              progress: _progressAnimation?.value ?? 0.0,
+              size: 110,
+              strokeWidth: 8,
             ),
             const SizedBox(height: 24),
             const Text(
@@ -222,21 +206,33 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Thumbnail
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Container(
-                  width: 110,
-                  height: 75,
-                  color: Colors.grey.shade300,
-                  child: videoInfo.thumbnailUrl.isNotEmpty
-                      ? Image.network(
-                          videoInfo.thumbnailUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.video_library, size: 36, color: Colors.grey),
-                        )
-                      : const Icon(Icons.video_library, size: 36, color: Colors.grey),
+              // Thumbnail with rounded corners and subtle shadow
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14.0),
+                  child: Container(
+                    width: 110,
+                    height: 75,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: videoInfo.thumbnailUrl.isNotEmpty
+                        ? Image.network(
+                            videoInfo.thumbnailUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.video_library, size: 36, color: Colors.grey),
+                          )
+                        : const Icon(Icons.video_library, size: 36, color: Colors.grey),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -292,60 +288,78 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
               return Column(
                 children: [
                   Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       itemCount: videoInfo.formats.length,
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1, indent: 64),
                       itemBuilder: (context, index) {
                         final format = videoInfo.formats[index];
                         final isChecked = queuedFormatsForThisVideo
                             .any((item) => item.selectedFormat == format);
 
-                        return CheckboxListTile(
-                          controlAffinity: ListTileControlAffinity.leading,
-                          value: isChecked,
-                          onChanged: (bool? checked) {
-                            if (checked == true) {
-                              ref
-                                  .read(downloadQueueProvider.notifier)
-                                  .addQueueItem(videoInfo, format);
-                            } else {
-                              ref
-                                  .read(downloadQueueProvider.notifier)
-                                  .removeQueueItem(videoInfo, format);
-                            }
-                          },
-                          title: Text(
-                            format.formattedDisplayLabel,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Card(
+                            elevation: isChecked ? 3 : 1,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              side: BorderSide(
+                                color: isChecked
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.outlineVariant,
+                                width: isChecked ? 1.5 : 1.0,
+                              ),
                             ),
-                          ),
-                          subtitle: format.formattedEstimatedSize != null
-                              ? Text(
-                                  format.formattedEstimatedSize!,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                )
-                              : null,
-                          secondary: IconButton(
-                            icon: const Icon(Icons.download_rounded),
-                            tooltip: 'Download ${format.label}',
-                            onPressed: () {
-                              ref
-                                  .read(downloadQueueProvider.notifier)
-                                  .startSingleDownload(videoInfo, format);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Downloading ${format.label}...'),
-                                  duration: const Duration(seconds: 2),
+                            child: CheckboxListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
+                              controlAffinity: ListTileControlAffinity.leading,
+                              value: isChecked,
+                              onChanged: (bool? checked) {
+                                if (checked == true) {
+                                  ref
+                                      .read(downloadQueueProvider.notifier)
+                                      .addQueueItem(videoInfo, format);
+                                } else {
+                                  ref
+                                      .read(downloadQueueProvider.notifier)
+                                      .removeQueueItem(videoInfo, format);
+                                }
+                              },
+                              title: Text(
+                                format.formattedDisplayLabel,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
                                 ),
-                              );
-                            },
+                              ),
+                              subtitle: format.formattedEstimatedSize != null
+                                  ? Text(
+                                      format.formattedEstimatedSize!,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                    )
+                                  : null,
+                              secondary: IconButton(
+                                icon: const Icon(Icons.download_rounded),
+                                tooltip: 'Download ${format.label}',
+                                onPressed: () {
+                                  ref
+                                      .read(downloadQueueProvider.notifier)
+                                      .startSingleDownload(videoInfo, format);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content:
+                                          Text('Downloading ${format.label}...'),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ),
                         );
                       },

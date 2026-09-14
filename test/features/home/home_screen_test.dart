@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reel_saver/core/widgets/circular_percentage_indicator.dart';
 import 'package:reel_saver/features/clipboard_engine/clipboard_watcher.dart';
 import 'package:reel_saver/features/clipboard_engine/models/clipboard_state.dart';
 import 'package:reel_saver/features/clipboard_engine/models/clipboard_status.dart';
@@ -152,7 +153,7 @@ void main() {
 
       expect(find.byType(FetchingDetailsScreen), findsOneWidget);
       expect(find.text('Fetching...'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(CircularPercentageIndicator), findsOneWidget);
     });
 
     testWidgets('in Manual Mode: shows inline error text on invalid URL submission', (tester) async {

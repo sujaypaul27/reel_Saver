@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:reel_saver/core/theme/app_theme.dart';
+import 'package:reel_saver/core/theme/theme_provider.dart';
 import 'package:reel_saver/features/history/history_service.dart';
 import 'package:reel_saver/features/history/models/history_item.dart';
 import 'package:reel_saver/features/home/providers/auto_mode_provider.dart';
@@ -278,6 +280,54 @@ void main() {
         find.text('All downloaded files and history have been cleared.'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('SettingsScreen Widget Tests - Appearance', () {
+    testWidgets('renders Appearance section with theme cards for all 3 modes',
+        (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Appearance'), findsOneWidget);
+      expect(find.text('Midnight'), findsOneWidget);
+      expect(find.text('Classic Light'), findsOneWidget);
+      expect(find.text('Sunset'), findsOneWidget);
+    });
+
+    testWidgets('tapping theme card updates themeProvider and active selection',
+        (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: SettingsScreen(
+              customTempDirectory: mockCacheDirectory,
+              customDownloadsDirectory: mockDownloadsDirectory,
+              customHistoryService: testHistoryService,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Default theme is midnight
+      expect(container.read(themeProvider), AppThemeMode.midnight);
+
+      // Tap Classic Light card
+      await tester.tap(find.text('Classic Light'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(themeProvider), AppThemeMode.classicLight);
+
+      // Tap Sunset card
+      await tester.tap(find.text('Sunset'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(themeProvider), AppThemeMode.sunset);
     });
   });
 }
