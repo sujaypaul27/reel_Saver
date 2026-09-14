@@ -38,7 +38,7 @@ void main() {
       final item = queueNotifier.state.first;
       expect(item.id, equals(id));
       expect(item.videoInfo.title, equals('Test Queue Reel'));
-      expect(item.selectedFormat.label, equals('1080p'));
+      expect(item.selectedFormat?.label, equals('1080p'));
       expect(item.status, equals(QueueItemStatus.queued));
       expect(item.progressPercent, equals(0.0));
       expect(queueNotifier.isFormatQueued(sampleVideo, format1080), isTrue);
@@ -59,7 +59,7 @@ void main() {
 
       queueNotifier.removeQueueItem(sampleVideo, format1080);
       expect(queueNotifier.state.length, equals(1));
-      expect(queueNotifier.state.first.selectedFormat.label, equals('720p'));
+      expect(queueNotifier.state.first.selectedFormat?.label, equals('720p'));
       expect(queueNotifier.isFormatQueued(sampleVideo, format1080), isFalse);
     });
 
@@ -98,7 +98,65 @@ void main() {
 
       queueNotifier.clearCompleted();
       expect(queueNotifier.state.length, equals(1));
-      expect(queueNotifier.state.first.selectedFormat.label, equals('720p'));
+      expect(queueNotifier.state.first.selectedFormat?.label, equals('720p'));
+    });
+
+    test('addSharedQueueItem adds item with status queued and null selectedFormat', () {
+      final id = queueNotifier.addSharedQueueItem(
+        sampleVideo,
+        videoUrl: 'https://instagram.com/reel/test',
+      );
+
+      expect(queueNotifier.state.length, equals(1));
+      final item = queueNotifier.state.first;
+      expect(item.id, equals(id));
+      expect(item.selectedFormat, isNull);
+      expect(item.videoUrl, equals('https://instagram.com/reel/test'));
+      expect(item.status, equals(QueueItemStatus.queued));
+    });
+
+    test('startQueuedDownloads excludes items with null format, keeping them in cart', () async {
+      // Add one item with format and one shared item with null format
+      queueNotifier.addQueueItem(sampleVideo, format1080);
+      queueNotifier.addSharedQueueItem(
+        sampleVideo,
+        videoUrl: 'https://instagram.com/reel/test',
+      );
+
+      expect(queueNotifier.state.length, equals(2));
+
+      await queueNotifier.startQueuedDownloads();
+
+      // Item with format completed download
+      final formatItem = queueNotifier.state.firstWhere((i) => i.selectedFormat != null);
+      expect(formatItem.status, equals(QueueItemStatus.completed));
+      expect(formatItem.progressPercent, equals(100.0));
+
+      // Item with null format was skipped and remained queued
+      final sharedItem = queueNotifier.state.firstWhere((i) => i.selectedFormat == null);
+      expect(sharedItem.status, equals(QueueItemStatus.queued));
+      expect(sharedItem.progressPercent, equals(0.0));
+    });
+
+    test('addQueueItem upgrades existing unselected placeholder item with chosen format', () {
+      // User shared item to cart
+      final sharedId = queueNotifier.addSharedQueueItem(
+        sampleVideo,
+        videoUrl: 'https://instagram.com/reel/test',
+      );
+      expect(queueNotifier.state.length, equals(1));
+      expect(queueNotifier.state.first.selectedFormat, isNull);
+
+      // User later selects format via format selector
+      final upgradedId = queueNotifier.addQueueItem(
+        sampleVideo,
+        format1080,
+        videoUrl: 'https://instagram.com/reel/test',
+      );
+
+      expect(queueNotifier.state.length, equals(1));
+      expect(upgradedId, equals(sharedId));
+      expect(queueNotifier.state.first.selectedFormat?.label, equals('1080p'));
     });
   });
 }

@@ -9,32 +9,37 @@ enum QueueItemStatus {
   failed,
 }
 
-/// Represents an individual video format entry queued for download.
+/// Represents an individual video entry queued for download.
 class QueueItem {
   final String id;
   final VideoInfo videoInfo;
-  final VideoFormat selectedFormat;
+  final VideoFormat? selectedFormat;
   final QueueItemStatus status;
   final double progressPercent;
+  final String? videoUrl;
 
   const QueueItem({
     required this.id,
     required this.videoInfo,
-    required this.selectedFormat,
+    this.selectedFormat,
     this.status = QueueItemStatus.queued,
     this.progressPercent = 0.0,
+    this.videoUrl,
   });
 
   QueueItem copyWith({
+    VideoFormat? selectedFormat,
     QueueItemStatus? status,
     double? progressPercent,
+    String? videoUrl,
   }) {
     return QueueItem(
       id: id,
       videoInfo: videoInfo,
-      selectedFormat: selectedFormat,
+      selectedFormat: selectedFormat ?? this.selectedFormat,
       status: status ?? this.status,
       progressPercent: progressPercent ?? this.progressPercent,
+      videoUrl: videoUrl ?? this.videoUrl,
     );
   }
 
@@ -46,14 +51,21 @@ class QueueItem {
         other.videoInfo == videoInfo &&
         other.selectedFormat == selectedFormat &&
         other.status == status &&
-        other.progressPercent == progressPercent;
+        other.progressPercent == progressPercent &&
+        other.videoUrl == videoUrl;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, videoInfo, selectedFormat, status, progressPercent);
+  int get hashCode => Object.hash(
+        id,
+        videoInfo,
+        selectedFormat,
+        status,
+        progressPercent,
+        videoUrl,
+      );
 
   @override
   String toString() =>
-      'QueueItem(id: $id, title: ${videoInfo.title}, format: ${selectedFormat.label}, status: $status, progress: $progressPercent%)';
+      'QueueItem(id: $id, title: ${videoInfo.title}, format: ${selectedFormat?.label ?? "none"}, status: $status, progress: $progressPercent%, url: $videoUrl)';
 }

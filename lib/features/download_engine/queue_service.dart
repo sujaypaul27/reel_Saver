@@ -12,7 +12,36 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
   DownloadQueueNotifier() : super(const <QueueItem>[]);
 
   /// Adds a format to the queue with status [QueueItemStatus.queued].
-  String addQueueItem(VideoInfo videoInfo, VideoFormat selectedFormat) {
+  /// If a placeholder item with null format exists for this video, it is upgraded with the selected format.
+  String addQueueItem(
+    VideoInfo videoInfo,
+    VideoFormat selectedFormat, {
+    String? videoUrl,
+  }) {
+    // If an unselected placeholder exists for this video, upgrade it
+    final unselectedIndex = state.indexWhere(
+      (item) =>
+          item.selectedFormat == null &&
+          (item.videoInfo.title == videoInfo.title ||
+              (videoUrl != null && item.videoUrl == videoUrl)) &&
+          item.status == QueueItemStatus.queued,
+    );
+    if (unselectedIndex != -1) {
+      final placeholder = state[unselectedIndex];
+      final upgradedItem = placeholder.copyWith(
+        selectedFormat: selectedFormat,
+        videoUrl: videoUrl ?? placeholder.videoUrl,
+      );
+      state = [
+        for (int i = 0; i < state.length; i++)
+          if (i == unselectedIndex) upgradedItem else state[i],
+      ];
+      debugPrint(
+        '[DownloadQueueNotifier] Upgraded shared placeholder to: ${videoInfo.title} (${selectedFormat.label})',
+      );
+      return upgradedItem.id;
+    }
+
     // Avoid duplicate queued entry for identical video and format
     final existingIndex = state.indexWhere(
       (item) =>
@@ -32,11 +61,48 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
       selectedFormat: selectedFormat,
       status: QueueItemStatus.queued,
       progressPercent: 0.0,
+      videoUrl: videoUrl,
     );
 
     state = [...state, newItem];
     debugPrint(
       '[DownloadQueueNotifier] Added to queue: ${videoInfo.title} (${selectedFormat.label})',
+    );
+    return uniqueId;
+  }
+
+  /// Adds an item shared from Instagram or YouTube to the queue with no format selected yet.
+  String addSharedQueueItem(
+    VideoInfo videoInfo, {
+    required String videoUrl,
+  }) {
+    // Prevent duplicate entry for same URL if still active in queue
+    final existingIndex = state.indexWhere(
+      (item) =>
+          item.videoUrl == videoUrl &&
+          (item.status == QueueItemStatus.queued ||
+              item.status == QueueItemStatus.downloading),
+    );
+    if (existingIndex != -1) {
+      debugPrint(
+        '[DownloadQueueNotifier] Shared item already in cart: $videoUrl',
+      );
+      return state[existingIndex].id;
+    }
+
+    final uniqueId = '${DateTime.now().microsecondsSinceEpoch}_shared';
+    final newItem = QueueItem(
+      id: uniqueId,
+      videoInfo: videoInfo,
+      selectedFormat: null,
+      status: QueueItemStatus.queued,
+      progressPercent: 0.0,
+      videoUrl: videoUrl,
+    );
+
+    state = [...state, newItem];
+    debugPrint(
+      '[DownloadQueueNotifier] Added shared item to cart: ${videoInfo.title} (Quality pending)',
     );
     return uniqueId;
   }
@@ -65,15 +131,21 @@ class DownloadQueueNotifier extends StateNotifier<List<QueueItem>> {
     );
   }
 
-  /// Starts downloading all queued items concurrently, simulating progress over 2 seconds.
+  /// Starts downloading all queued items that have a format selected, simulating progress over 2 seconds.
+  /// Items with no format chosen are skipped silently and kept in the cart.
   Future<void> startQueuedDownloads() async {
-    final queuedItems =
-        state.where((item) => item.status == QueueItemStatus.queued).toList();
+    final queuedItems = state
+        .where(
+          (item) =>
+              item.status == QueueItemStatus.queued &&
+              item.selectedFormat != null,
+        )
+        .toList();
 
     if (queuedItems.isEmpty) return;
 
     debugPrint(
-      '[DownloadQueueNotifier] Starting downloads for ${queuedItems.length} queued items.',
+      '[DownloadQueueNotifier] Starting downloads for ${queuedItems.length} queued items with selected formats.',
     );
 
     final queuedIds = queuedItems.map((item) => item.id).toSet();

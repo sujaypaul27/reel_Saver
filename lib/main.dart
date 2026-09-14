@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'features/clipboard_engine/share_intent_service.dart';
 import 'features/home/screens/fetching_details_screen.dart';
 import 'features/home/screens/home_screen.dart';
 
@@ -29,8 +30,21 @@ void main() {
   );
 }
 
-class ReelSaverApp extends StatelessWidget {
+class ReelSaverApp extends ConsumerStatefulWidget {
   const ReelSaverApp({super.key});
+
+  @override
+  ConsumerState<ReelSaverApp> createState() => _ReelSaverAppState();
+}
+
+class _ReelSaverAppState extends ConsumerState<ReelSaverApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(shareIntentServiceProvider).initialize();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

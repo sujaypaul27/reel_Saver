@@ -295,24 +295,58 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       style: const TextStyle(fontWeight: FontWeight.w600),
                                     ),
                                     const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Text(
-                                          '${item.selectedFormat.label} (${item.selectedFormat.typeDescription})',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade700,
+                                    if (item.selectedFormat == null) ...[
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Quality not selected',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.orange.shade800,
+                                              fontStyle: FontStyle.italic,
+                                            ),
                                           ),
-                                        ),
-                                        const Spacer(),
-                                        _buildQueueStatusIndicator(item),
-                                      ],
-                                    ),
-                                    if (item.status == QueueItemStatus.downloading) ...[
-                                      const SizedBox(height: 6),
-                                      LinearProgressIndicator(
-                                        value: item.progressPercent / 100,
+                                          const Spacer(),
+                                          OutlinedButton.icon(
+                                            style: OutlinedButton.styleFrom(
+                                              visualDensity: VisualDensity.compact,
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 4,
+                                              ),
+                                            ),
+                                            icon: const Icon(Icons.tune_rounded, size: 16),
+                                            label: const Text('Select Quality'),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                              context.push(
+                                                '/fetching-details',
+                                                extra: item.videoUrl,
+                                              );
+                                            },
+                                          ),
+                                        ],
                                       ),
+                                    ] else ...[
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '${item.selectedFormat!.label} (${item.selectedFormat!.typeDescription})',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          _buildQueueStatusIndicator(item),
+                                        ],
+                                      ),
+                                      if (item.status == QueueItemStatus.downloading) ...[
+                                        const SizedBox(height: 6),
+                                        LinearProgressIndicator(
+                                          value: item.progressPercent / 100,
+                                        ),
+                                      ],
                                     ],
                                   ],
                                 ),

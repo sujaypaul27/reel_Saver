@@ -83,7 +83,7 @@ void main() {
       // Verify item was added to queue with status queued
       final queueAfterAdd = container.read(downloadQueueProvider);
       expect(queueAfterAdd.length, equals(1));
-      expect(queueAfterAdd.first.selectedFormat.label, equals('1080p'));
+      expect(queueAfterAdd.first.selectedFormat?.label, equals('1080p'));
       expect(queueAfterAdd.first.status, equals(QueueItemStatus.queued));
       expect(find.widgetWithText(ElevatedButton, 'Download Selected (1)'), findsOneWidget);
 
@@ -138,6 +138,41 @@ void main() {
       expect(find.text('Queue UI Test Reel'), findsOneWidget);
       expect(find.text('Queued'), findsOneWidget);
       expect(find.text('Clear Completed'), findsOneWidget);
+    });
+
+    testWidgets('HomeScreen bottom sheet displays Select Quality button when selectedFormat is null', (tester) async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Add shared queue item with null format
+      container.read(downloadQueueProvider.notifier).addSharedQueueItem(
+            sampleVideo,
+            videoUrl: 'https://instagram.com/reel/shared123',
+          );
+      await tester.pumpAndSettle();
+
+      // Banner appears
+      expect(find.text('1 download in progress'), findsOneWidget);
+
+      // Open bottom sheet
+      await tester.tap(find.text('1 download in progress'));
+      await tester.pumpAndSettle();
+
+      // Verifications for shared item awaiting format selection
+      expect(find.text('Download Queue'), findsOneWidget);
+      expect(find.text('Queue UI Test Reel'), findsOneWidget);
+      expect(find.text('Quality not selected'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Select Quality'), findsOneWidget);
     });
   });
 }

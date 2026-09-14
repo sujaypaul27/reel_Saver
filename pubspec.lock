@@ -133,6 +133,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  fluttertoast:
+    dependency: "direct main"
+    description:
+      name: fluttertoast
+      sha256: "1ecdfd4add8b57eb33f6a36e7856d023cb039fe652ab225504d8a712b4238572"
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.0.0"
   go_router:
     dependency: "direct main"
     description:
@@ -429,6 +437,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  receive_sharing_intent:
+    dependency: "direct main"
+    description:
+      name: receive_sharing_intent
+      sha256: "72f229a38f2910029c11d840770c173b27072e348ef3376130b37514bc4556f6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.9.0"
   record_use:
     dependency: transitive
     description:
