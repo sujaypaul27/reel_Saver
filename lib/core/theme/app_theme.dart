@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:reel_saver/core/theme/typography.dart';
 
 /// Available selectable themes in Reel Saver.
 enum AppThemeMode {
@@ -30,7 +31,7 @@ class AppThemes {
   const AppThemes._();
 
   /// 1. Midnight Theme: Dark deep navy/black with electric violet accents.
-  static ThemeData get midnightTheme {
+  static ThemeData midnightTheme({Locale? locale}) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF6366F1), // Electric violet
       brightness: Brightness.dark,
@@ -51,11 +52,12 @@ class AppThemes {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFF0B0F19),
       cardColor: const Color(0xFF131C2E),
+      locale: locale,
     );
   }
 
   /// 2. Classic Light Theme: Clean white/soft grey with royal sapphire blue accents.
-  static ThemeData get classicLightTheme {
+  static ThemeData classicLightTheme({Locale? locale}) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF2563EB), // Royal sapphire
       brightness: Brightness.light,
@@ -76,11 +78,12 @@ class AppThemes {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       cardColor: Colors.white,
+      locale: locale,
     );
   }
 
   /// 3. Sunset Theme: Warm dark tones (deep plum charcoal) with sunset coral-orange accents.
-  static ThemeData get sunsetTheme {
+  static ThemeData sunsetTheme({Locale? locale}) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFFF97316), // Sunset coral-orange
       brightness: Brightness.dark,
@@ -101,18 +104,19 @@ class AppThemes {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFF160E14),
       cardColor: const Color(0xFF261923),
+      locale: locale,
     );
   }
 
   /// Resolves the full [ThemeData] for a given [AppThemeMode].
-  static ThemeData getThemeData(AppThemeMode mode) {
+  static ThemeData getThemeData(AppThemeMode mode, {Locale? locale}) {
     switch (mode) {
       case AppThemeMode.classicLight:
-        return classicLightTheme;
+        return classicLightTheme(locale: locale);
       case AppThemeMode.sunset:
-        return sunsetTheme;
+        return sunsetTheme(locale: locale);
       case AppThemeMode.midnight:
-        return midnightTheme;
+        return midnightTheme(locale: locale);
     }
   }
 
@@ -121,23 +125,28 @@ class AppThemes {
     required ColorScheme colorScheme,
     required Color scaffoldBackgroundColor,
     required Color cardColor,
+    Locale? locale,
   }) {
+    final textTheme = AppTypography.buildTextTheme(
+      locale: locale,
+      displayColor: colorScheme.onSurface,
+      bodyColor: colorScheme.onSurface,
+    );
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: scaffoldBackgroundColor,
       cardColor: cardColor,
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         centerTitle: false,
         backgroundColor: scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 2,
         iconTheme: IconThemeData(color: colorScheme.onSurface),
-        titleTextStyle: TextStyle(
+        titleTextStyle: textTheme.titleLarge?.copyWith(
           color: colorScheme.onSurface,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
         ),
       ),
       cardTheme: CardThemeData(
@@ -159,11 +168,7 @@ class AppThemes {
           ),
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
-          ),
+          textStyle: textTheme.labelLarge,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -173,10 +178,7 @@ class AppThemes {
             borderRadius: BorderRadius.circular(12),
           ),
           side: BorderSide(color: colorScheme.primary),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: textTheme.labelLarge,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

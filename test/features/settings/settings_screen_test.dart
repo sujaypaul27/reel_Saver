@@ -215,6 +215,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Clear Storage
+      await tester.ensureVisible(find.text('Clear Storage'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Clear Storage'));
       await tester.pumpAndSettle();
 
@@ -264,6 +266,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Clear Storage
+      await tester.ensureVisible(find.text('Clear Storage'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Clear Storage'));
       await tester.pumpAndSettle();
 

@@ -124,7 +124,7 @@ class _ReelSaverAppState extends ConsumerState<ReelSaverApp> {
       locale: appLocale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
-      theme: AppThemes.getThemeData(selectedThemeMode),
+      theme: AppThemes.getThemeData(selectedThemeMode, locale: appLocale),
     );
   }
 }

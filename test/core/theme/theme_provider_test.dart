@@ -13,7 +13,7 @@ void main() {
   });
 
   group('AppThemes ThemeData Verification', () {
-    test('Midnight theme returns correct dark colorScheme and shape tokens', () {
+    testWidgets('Midnight theme returns correct dark colorScheme and shape tokens', (tester) async {
       final theme = AppThemes.getThemeData(AppThemeMode.midnight);
 
       expect(theme.brightness, Brightness.dark);
@@ -28,7 +28,7 @@ void main() {
       expect(cardBorder.borderRadius, BorderRadius.circular(14));
     });
 
-    test('Classic Light theme returns correct light colorScheme and shape tokens', () {
+    testWidgets('Classic Light theme returns correct light colorScheme and shape tokens', (tester) async {
       final theme = AppThemes.getThemeData(AppThemeMode.classicLight);
 
       expect(theme.brightness, Brightness.light);
@@ -43,7 +43,7 @@ void main() {
       expect(cardBorder.borderRadius, BorderRadius.circular(14));
     });
 
-    test('Sunset theme returns correct warm dark colorScheme and shape tokens', () {
+    testWidgets('Sunset theme returns correct warm dark colorScheme and shape tokens', (tester) async {
       final theme = AppThemes.getThemeData(AppThemeMode.sunset);
 
       expect(theme.brightness, Brightness.dark);

@@ -129,10 +129,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Expanded(
                           child: Text(
                             l10n.downloadsInProgress(activeDownloads.length),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                         const Icon(Icons.keyboard_arrow_up_rounded),
@@ -152,12 +151,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SwitchListTile(
                 title: Text(
                   l10n.autoDetectionTitle,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 subtitle: Text(
                   isAutomaticDetectionEnabled
                       ? l10n.autoDetectionSubtitleActive
                       : l10n.autoDetectionSubtitleInactive,
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 value: isAutomaticDetectionEnabled,
                 onChanged: (bool newToggleValue) {
@@ -261,11 +261,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            l10n.downloadQueueTitle,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Text(
+                              l10n.downloadQueueTitle,
+                              style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
                           TextButton(
@@ -300,7 +299,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       item.videoInfo.title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                     const SizedBox(height: 4),
                                     if (item.selectedFormat == null) ...[
@@ -308,11 +309,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         children: [
                                           Text(
                                             l10n.qualityNotSelected,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.orange.shade800,
-                                              fontStyle: FontStyle.italic,
-                                            ),
+                                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                                  color: Colors.orange.shade800,
+                                                  fontStyle: FontStyle.italic,
+                                                ),
                                           ),
                                           const Spacer(),
                                           OutlinedButton.icon(
@@ -340,10 +340,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         children: [
                                           Text(
                                             '${item.selectedFormat!.label} (${item.selectedFormat!.typeDescription})',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade700,
-                                            ),
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                ),
                                           ),
                                           const Spacer(),
                                           _buildQueueStatusIndicator(item, l10n),
@@ -378,12 +377,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       case QueueItemStatus.queued:
         return Text(
           l10n.statusQueued,
-          style: const TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
         );
       case QueueItemStatus.downloading:
         return Text(
           '${item.progressPercent.toInt()}%',
-          style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Colors.blue,
+                fontWeight: FontWeight.bold,
+              ),
         );
       case QueueItemStatus.completed:
         return Row(
@@ -393,7 +398,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(width: 4),
             Text(
               l10n.statusCompleted,
-              style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ],
         );
@@ -413,11 +421,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 4),
                     Text(
                       l10n.statusFailed,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ],
                 ),
@@ -430,7 +437,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               ),
               onPressed: () => _retryDownloadWithPermission(item.id, l10n),
-              child: Text(l10n.retryButton, style: const TextStyle(fontSize: 12)),
+              child: Text(
+                l10n.retryButton,
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
             ),
           ],
         );

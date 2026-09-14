@@ -32,28 +32,29 @@ class AppDrawer extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   l10n.appName,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
                 ),
                 Text(
                   l10n.appTagline,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onPrimaryContainer
-                        .withValues(alpha: 0.8),
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onPrimaryContainer
+                            .withValues(alpha: 0.8),
+                      ),
                 ),
               ],
             ),
           ),
           ListTile(
             leading: const Icon(Icons.home_outlined),
-            title: Text(l10n.navHome),
+            title: Text(
+              l10n.navHome,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             selected: currentRoutePath == '/',
             onTap: () {
               Navigator.of(context).pop();
@@ -64,7 +65,10 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.history_rounded),
-            title: Text(l10n.navHistory),
+            title: Text(
+              l10n.navHistory,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             selected: currentRoutePath == '/history',
             onTap: () {
               Navigator.of(context).pop();
@@ -75,7 +79,10 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
-            title: Text(l10n.navSettings),
+            title: Text(
+              l10n.navSettings,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             selected: currentRoutePath == '/settings',
             onTap: () {
               Navigator.of(context).pop();

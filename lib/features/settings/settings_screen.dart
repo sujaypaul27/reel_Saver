@@ -190,11 +190,9 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           Text(
             l10n.sectionAppearance,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -275,13 +273,12 @@ class SettingsScreen extends ConsumerWidget {
                           Text(
                             _getLocalizedThemeName(themeMode, l10n),
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
-                              color: previewTheme.colorScheme.onSurface,
-                            ),
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  color: previewTheme.colorScheme.onSurface,
+                                ),
                           ),
                           if (isSelected) ...[
                             const SizedBox(height: 4),
@@ -302,11 +299,9 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           Text(
             l10n.sectionPreferences,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
           ),
           const SizedBox(height: 12),
           Card(
@@ -323,10 +318,13 @@ class SettingsScreen extends ConsumerWidget {
                   secondary: const Icon(Icons.flash_on_rounded),
                   title: Text(
                     l10n.autoDetectionSettingTitle,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   subtitle: Text(
                     l10n.autoDetectionSettingSubtitle,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   value: isAutomaticDetectionEnabled,
                   onChanged: (newValue) {
@@ -338,10 +336,13 @@ class SettingsScreen extends ConsumerWidget {
                   leading: const Icon(Icons.language_rounded),
                   title: Text(
                     l10n.appLanguageTitle,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   subtitle: Text(
                     AppLanguage.fromLocale(activeLocale).displayName,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   trailing: DropdownButtonHideUnderline(
                     child: DropdownButton<Locale>(
@@ -369,11 +370,9 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           Text(
             l10n.sectionStorageManagement,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
           ),
           const SizedBox(height: 12),
           Card(
@@ -390,10 +389,13 @@ class SettingsScreen extends ConsumerWidget {
                   leading: const Icon(Icons.cached_rounded),
                   title: Text(
                     l10n.clearCacheTitle,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   subtitle: Text(
                     l10n.clearCacheSubtitle,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => _handleClearCache(context, l10n),
@@ -406,13 +408,14 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   title: Text(
                     l10n.clearStorageTitle,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                   ),
                   subtitle: Text(
                     l10n.clearStorageSubtitle,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => _handleClearStorage(context, ref, l10n),

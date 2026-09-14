@@ -141,14 +141,16 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
             const SizedBox(height: 24),
             Text(
               l10n.fetchingLabel,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
             Text(
               widget.videoUrl ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
           ],
         ),
@@ -173,7 +175,7 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
             Text(
               l10n.fetchErrorDescription,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
+              style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -249,23 +251,24 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
                       videoInfo.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.timer_outlined, size: 16, color: Colors.grey),
+                        Icon(
+                          Icons.timer_outlined,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           videoInfo.formattedDuration,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
                         ),
                       ],
                     ),
@@ -331,20 +334,16 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
                               },
                               title: Text(
                                 format.formattedDisplayLabel,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                               ),
                               subtitle: format.formattedEstimatedSize != null
                                   ? Text(
                                       format.formattedEstimatedSize!,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
-                                      ),
+                                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
                                     )
                                   : null,
                               secondary: IconButton(
@@ -401,10 +400,9 @@ class _FetchingDetailsScreenState extends ConsumerState<FetchingDetailsScreen>
                               ? l10n.downloadSelectedButton
                               : l10n.downloadSelectedWithCountButton(
                                   queuedFormatsForThisVideo.length),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ),
                     ),
